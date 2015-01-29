@@ -19,15 +19,17 @@ package dk.tbsalling.ais.tracker;
 import com.google.common.collect.ImmutableSet;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.BasicShipDynamicDataReport;
+import dk.tbsalling.aismessages.ais.messages.Metadata;
 import dk.tbsalling.aismessages.ais.messages.ShipStaticDataReport;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 
 /**
  * An AisTracker receives AISMessages and based on these it maintains a collection of all known tracks,
@@ -38,28 +40,49 @@ import java.util.function.Consumer;
  * later on.
  */
 @ThreadSafe
-public class AisTracker implements Consumer<AISMessage> {
+public class AisTracker {
 
     /**
      * Update the tracker with a new AIS message.
+     *
+     * If there is a reception timestamp in the meta data of the AIS message, then it will be used as the
+     * message timestamp. If not, current system time will be used as the timestamp.
+     *
      * @param aisMessage the AIS message.
      */
-    @Override
-    public void accept(AISMessage aisMessage) {
+    public void update(AISMessage aisMessage) {
+        Metadata metadata = aisMessage.getMetadata();
+        Instant messageTimestamp = metadata == null ? Instant.now(Clock.systemUTC()) : Instant.ofEpochMilli(metadata.getReceived());
+        updateAisTrack(aisMessage, messageTimestamp);
+    }
+
+    /**
+     * Update the tracker with a new AIS message.
+     *
+     * @param aisMessage the AIS message.
+     * @param messageTimestamp the time this AIS message was received.
+     */
+    public void update(AISMessage aisMessage, Instant messageTimestamp) {
+        updateAisTrack(aisMessage, messageTimestamp);
+    }
+
+    private void updateAisTrack(final AISMessage aisMessage, final Instant messageTimestamp) {
+        /* extract mmsi from message */
+        final long mmsi = aisMessage.getSourceMmsi().getMMSI();
+
         lock.lock();
         try {
-            final long mmsi = aisMessage.getSourceMmsi().getMMSI();
             if (aisMessage instanceof ShipStaticDataReport) {
                 if (isVesselTracked(mmsi)) {
-                    updateVessel(mmsi, (ShipStaticDataReport) aisMessage);
+                    updateVessel(mmsi, (ShipStaticDataReport) aisMessage, messageTimestamp);
                 } else {
-                    insertVessel(mmsi, (ShipStaticDataReport) aisMessage);
+                    insertVessel(mmsi, (ShipStaticDataReport) aisMessage, messageTimestamp);
                 }
             } else if (aisMessage instanceof BasicShipDynamicDataReport) {
                 if (isVesselTracked(mmsi)) {
-                    updateVessel(mmsi, (BasicShipDynamicDataReport) aisMessage);
+                    updateVessel(mmsi, (BasicShipDynamicDataReport) aisMessage, messageTimestamp);
                 } else {
-                    insertVessel(mmsi, (BasicShipDynamicDataReport) aisMessage);
+                    insertVessel(mmsi, (BasicShipDynamicDataReport) aisMessage, messageTimestamp);
                 }
             }
         } finally {
@@ -121,23 +144,31 @@ public class AisTracker implements Consumer<AISMessage> {
         }
     }
 
-    private void insertVessel(long mmsi, ShipStaticDataReport shipStaticDataReport) {
-        tracks.put(mmsi, new AisTrack(shipStaticDataReport, null));
+    private void insertVessel(final long mmsi, final ShipStaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
+        tracks.put(mmsi, new AisTrack(shipStaticDataReport, msgTimestamp));
     }
 
-    private void insertVessel(long mmsi, BasicShipDynamicDataReport basicShipDynamicDataReport) {
-        tracks.put(mmsi, new AisTrack(null, basicShipDynamicDataReport));
+    private void insertVessel(final long mmsi, final BasicShipDynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
+        tracks.put(mmsi, new AisTrack(basicShipDynamicDataReport, msgTimestamp));
     }
 
-    private void updateVessel(long mmsi, ShipStaticDataReport shipStaticDataReport) {
+    private void updateVessel(final long mmsi, final ShipStaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
-        AisTrack newTrack = new AisTrack(shipStaticDataReport, oldTrack.getDynamicDataReport());
+
+        if (msgTimestamp.isBefore(oldTrack.getTimeOfStaticUpdate()))
+            throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfStaticUpdate());
+
+        AisTrack newTrack = new AisTrack(shipStaticDataReport, oldTrack.getDynamicDataReport(), msgTimestamp, oldTrack.getTimeOfDynamicUpdate());
         tracks.put(mmsi, newTrack);
     }
 
-    private void updateVessel(long mmsi, BasicShipDynamicDataReport basicShipDynamicDataReport) {
+    private void updateVessel(final long mmsi, final BasicShipDynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
-        AisTrack newTrack = new AisTrack(oldTrack.getStaticDataReport(), basicShipDynamicDataReport);
+
+        if (msgTimestamp.isBefore(oldTrack.getTimeOfDynamicUpdate()))
+            throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfDynamicUpdate());
+
+        AisTrack newTrack = new AisTrack(oldTrack.getStaticDataReport(), basicShipDynamicDataReport, oldTrack.getTimeOfStaticUpdate(), msgTimestamp);
         tracks.put(mmsi, newTrack);
     }
 

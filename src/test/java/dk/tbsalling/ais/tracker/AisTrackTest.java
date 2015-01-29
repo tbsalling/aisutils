@@ -9,6 +9,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.time.Instant;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -21,7 +23,8 @@ public class AisTrackTest {
     static PositionReport dynamicAisMessageMMSI367524080;
 
     AisTrack track;
-
+    Instant now;
+    
     @BeforeClass
     public static void setup() {
         staticAisMessageMMSI211339980 = (ShipAndVoyageData) AISMessage.create(NMEAMessage.fromString("!AIVDM,2,1,0,B,539S:k40000000c3G04PPh63<00000000080000o1PVG2uGD:00000000000,0*34"), NMEAMessage.fromString("!AIVDM,2,2,0,B,00000000000,2*27"));
@@ -32,23 +35,49 @@ public class AisTrackTest {
 
     @Before
     public void createTrack() {
-        track = new AisTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080);
+        now = Instant.now();
+        track = new AisTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, now, now);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor1() throws Exception {
-        new AisTrack(null, null);
+        new AisTrack(null, null, null, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorStaticTimestampMustBeProvided() throws Exception {
+        new AisTrack(staticAisMessageMMSI211339980, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorStaticTimestampMustBeProvided2() throws Exception {
+        new AisTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, null, now);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorDynamicTimestampMustBeProvided() throws Exception {
+        new AisTrack(dynamicAisMessageMMSI367524080, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorDynamicTimestampMustBeProvided2() throws Exception {
+        new AisTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, now, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor2() throws Exception {
-        new AisTrack(staticAisMessageMMSI211339980, dynamicAisMessageMMSI367524080);
+        new AisTrack(staticAisMessageMMSI211339980, dynamicAisMessageMMSI367524080, now, now);
     }
 
     @Test
     public void testConstructor3() throws Exception {
-        new AisTrack(staticAisMessageMMSI367524080, null);
-        new AisTrack(null, dynamicAisMessageMMSI367524080);
+        new AisTrack(staticAisMessageMMSI367524080, null, now, null);
+        new AisTrack(null, dynamicAisMessageMMSI367524080, null, now);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructor4() throws Exception {
+        new AisTrack(null, dynamicAisMessageMMSI367524080, now, now);
     }
 
     @Test
@@ -64,6 +93,16 @@ public class AisTrackTest {
     @Test
     public void testGetPositionReport() throws Exception {
         assertSame(dynamicAisMessageMMSI367524080, track.getDynamicDataReport());
+    }
+
+    @Test
+    public void testGetTimeOfStaticUpdate() throws Exception {
+        assertEquals(now, track.getTimeOfStaticUpdate());
+    }
+
+    @Test
+    public void testGetTimeOfDynamicUpdate() throws Exception {
+        assertEquals(now, track.getTimeOfDynamicUpdate());
     }
 
     @Test
