@@ -1,5 +1,7 @@
 package dk.tbsalling.ais.tracker;
 
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Maps;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.ExtendedDynamicDataReport;
@@ -9,6 +11,9 @@ import dk.tbsalling.aismessages.ais.messages.types.TransponderClass;
 
 import javax.annotation.concurrent.Immutable;
 import java.time.Instant;
+import java.util.Comparator;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * The AisTrack class contains the consolidated information known about a given target, normally as the result
@@ -18,22 +23,105 @@ import java.time.Instant;
 public final class AisTrack {
 
     AisTrack(StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
+        requireNonNull(staticDataReport);
+        requireNonNull(timeOfStaticUpdate);
+
         this.staticDataReport = staticDataReport;
         this.dynamicDataReport = null;
         this.timeOfStaticUpdate = timeOfStaticUpdate;
         this.timeOfDynamicUpdate = null;
+        this.dynamicDataHistory = null;
+
         validateState();
     }
 
     AisTrack(DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
+        requireNonNull(dynamicDataReport);
+        requireNonNull(timeOfDynamicUpdate);
+
         this.staticDataReport = null;
         this.dynamicDataReport = dynamicDataReport;
         this.timeOfStaticUpdate = null;
         this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        this.dynamicDataHistory = null;
+
         validateState();
     }
 
     AisTrack(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
+        validateArgs(staticDataReport, dynamicDataReport, timeOfStaticUpdate, timeOfDynamicUpdate);
+
+        this.staticDataReport = staticDataReport;
+        this.dynamicDataReport = dynamicDataReport;
+        this.timeOfStaticUpdate = timeOfStaticUpdate;
+        this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        this.dynamicDataHistory = null;
+
+        validateState();
+    }
+
+    /**
+     * Create a new AisTrack using another track to build history.
+     */
+    AisTrack(AisTrack oldTrack, StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
+        requireNonNull(staticDataReport);
+        requireNonNull(timeOfStaticUpdate);
+
+        this.staticDataReport = staticDataReport;
+        this.dynamicDataReport = oldTrack.getDynamicDataReport();
+        this.timeOfStaticUpdate = timeOfStaticUpdate;
+        this.timeOfDynamicUpdate = oldTrack.getTimeOfDynamicUpdate();
+        validateState();
+
+        dynamicDataHistory = oldTrack.dynamicDataHistory;
+    }
+
+    /**
+     * Create a new AisTrack using another track to build history.
+     */
+    AisTrack(AisTrack oldTrack, DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
+        requireNonNull(dynamicDataReport);
+        requireNonNull(timeOfDynamicUpdate);
+
+        this.staticDataReport = oldTrack.getStaticDataReport();
+        this.dynamicDataReport = dynamicDataReport;
+        this.timeOfStaticUpdate = oldTrack.getTimeOfStaticUpdate();
+        this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        validateState();
+
+        if (oldTrack.timeOfDynamicUpdate != null && oldTrack.dynamicDataReport != null) {
+            dynamicDataHistory = new ImmutableSortedMap.Builder<Instant, DynamicDataReport>(Comparator.<Instant>naturalOrder())
+            .putAll(oldTrack.dynamicDataHistory == null ? Maps.newTreeMap() : oldTrack.dynamicDataHistory)
+            .put(oldTrack.timeOfDynamicUpdate, oldTrack.dynamicDataReport)
+            .build();
+        } else {
+            dynamicDataHistory = null;
+        }
+    }
+
+    /**
+     * Create a new AisTrack using another track to build history.
+     */
+    AisTrack(AisTrack oldTrack, StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
+        validateArgs(staticDataReport, dynamicDataReport, timeOfStaticUpdate, timeOfDynamicUpdate);
+
+        this.staticDataReport = staticDataReport;
+        this.dynamicDataReport = dynamicDataReport;
+        this.timeOfStaticUpdate = timeOfStaticUpdate;
+        this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        validateState();
+
+        if (oldTrack.timeOfDynamicUpdate != null && oldTrack.dynamicDataReport != null) {
+            dynamicDataHistory = new ImmutableSortedMap.Builder<Instant, DynamicDataReport>(Comparator.<Instant>naturalOrder())
+                .putAll(oldTrack.dynamicDataHistory == null ? Maps.newTreeMap() : oldTrack.dynamicDataHistory)
+                .put(oldTrack.timeOfDynamicUpdate, oldTrack.dynamicDataReport)
+                .build();
+        } else {
+            dynamicDataHistory = null;
+        }
+    }
+
+    private void validateArgs(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
         long mmsiStatic = staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMMSI() : -1;
         long mmsiDynamic = dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() : -1;
         if (mmsiStatic == -1 && mmsiDynamic == -1)
@@ -43,13 +131,6 @@ public final class AisTrack {
         if (staticDataReport != null && dynamicDataReport != null && ! staticDataReport.getTransponderClass().equals(dynamicDataReport.getTransponderClass())) {
             throw new IllegalArgumentException("staticDataReport is from transponder class " + staticDataReport.getTransponderClass() + ", dynamicDataReport is from transponder class " + dynamicDataReport.getTransponderClass() + ". They must be the same.");
         }
-
-        this.staticDataReport = staticDataReport;
-        this.dynamicDataReport = dynamicDataReport;
-        this.timeOfStaticUpdate = timeOfStaticUpdate;
-        this.timeOfDynamicUpdate = timeOfDynamicUpdate;
-
-        validateState();
     }
 
     private void validateState() {
@@ -171,9 +252,17 @@ public final class AisTrack {
         return dynamicDataReport instanceof ExtendedDynamicDataReport ? ((ExtendedDynamicDataReport) dynamicDataReport).getSecond() : null;
     }
 
+    /** Return an immutable and sorted map of this track's dynamic history. */
+    public ImmutableSortedMap<Instant, DynamicDataReport> getDynamicDataHistory() {
+        return dynamicDataHistory == null ? ImmutableSortedMap.copyOf(Maps.newTreeMap()) : dynamicDataHistory;
+    }
+
     private final StaticDataReport staticDataReport;
     private final DynamicDataReport dynamicDataReport;
     private final Instant timeOfStaticUpdate;
     private final Instant timeOfDynamicUpdate;
+
+    /* Dynamic history of the track excluding the most recent, current value */
+    private final ImmutableSortedMap<Instant, DynamicDataReport> dynamicDataHistory;
 
 }

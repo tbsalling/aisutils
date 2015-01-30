@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * An AisTracker receives AISMessages and based on these it maintains a collection of all known tracks,
  * including their position, speed, course, etc.
@@ -51,6 +53,8 @@ public class AisTracker {
      * @param aisMessage the AIS message.
      */
     public void update(AISMessage aisMessage) {
+        requireNonNull(aisMessage);
+
         Metadata metadata = aisMessage.getMetadata();
         Instant messageTimestamp = metadata == null ? Instant.now(Clock.systemUTC()) : Instant.ofEpochMilli(metadata.getReceived());
         updateAisTrack(aisMessage, messageTimestamp);
@@ -63,15 +67,20 @@ public class AisTracker {
      * @param messageTimestamp the time this AIS message was received.
      */
     public void update(AISMessage aisMessage, Instant messageTimestamp) {
+        requireNonNull(aisMessage);
+        requireNonNull(messageTimestamp);
+
         updateAisTrack(aisMessage, messageTimestamp);
     }
 
     private void updateAisTrack(final AISMessage aisMessage, final Instant messageTimestamp) {
-        /* extract mmsi from message */
         final long mmsi = aisMessage.getSourceMmsi().getMMSI();
 
         lock.lock();
         try {
+            if (messageTimestamp.isBefore(wallclock))
+                throw new IllegalArgumentException("Current time is " + wallclock + "; message timestamp is too old: " + messageTimestamp);
+
             if (aisMessage instanceof StaticDataReport) {
                 if (isVesselTracked(mmsi)) {
                     updateVessel(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
@@ -85,6 +94,7 @@ public class AisTracker {
                     insertVessel(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
                 }
             }
+            wallclock = messageTimestamp;
         } finally {
             lock.unlock();
         }
@@ -176,5 +186,9 @@ public class AisTracker {
 
     @GuardedBy("lock")
     private Map<Long, AisTrack> tracks = new HashMap<>();
+
+    /** Time of last update */
+    @GuardedBy("lock")
+    private Instant wallclock = Instant.EPOCH;
 
 }
