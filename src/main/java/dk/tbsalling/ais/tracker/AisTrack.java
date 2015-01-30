@@ -94,6 +94,15 @@ public final class AisTrack {
         return dynamicDataReport != null ? dynamicDataReport.getTransponderClass() : staticDataReport.getTransponderClass();
     }
 
+    public Instant getTimeOfLastUpdate() {
+        if (timeOfStaticUpdate == null)
+            return timeOfDynamicUpdate;
+        else if (timeOfDynamicUpdate == null)
+            return timeOfStaticUpdate;
+        else
+            return timeOfStaticUpdate.compareTo(timeOfDynamicUpdate) < 0 ? timeOfDynamicUpdate : timeOfStaticUpdate;
+    }
+
     public Instant getTimeOfStaticUpdate() {
         return timeOfStaticUpdate;
     }

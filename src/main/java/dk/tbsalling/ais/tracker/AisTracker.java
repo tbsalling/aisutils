@@ -155,7 +155,7 @@ public class AisTracker {
     private void updateVessel(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
 
-        if (msgTimestamp.isBefore(oldTrack.getTimeOfStaticUpdate()))
+        if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
             throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfStaticUpdate());
 
         AisTrack newTrack = new AisTrack(shipStaticDataReport, oldTrack.getDynamicDataReport(), msgTimestamp, oldTrack.getTimeOfDynamicUpdate());
@@ -165,7 +165,7 @@ public class AisTracker {
     private void updateVessel(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
 
-        if (msgTimestamp.isBefore(oldTrack.getTimeOfDynamicUpdate()))
+        if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
             throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfDynamicUpdate());
 
         AisTrack newTrack = new AisTrack(oldTrack.getStaticDataReport(), basicShipDynamicDataReport, oldTrack.getTimeOfStaticUpdate(), msgTimestamp);
