@@ -1,10 +1,11 @@
 package dk.tbsalling.ais.tracker;
 
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
-import dk.tbsalling.aismessages.ais.messages.BasicShipDynamicDataReport;
-import dk.tbsalling.aismessages.ais.messages.ShipDynamicDataReport;
-import dk.tbsalling.aismessages.ais.messages.ShipStaticDataReport;
+import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
+import dk.tbsalling.aismessages.ais.messages.ExtendedDynamicDataReport;
+import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import dk.tbsalling.aismessages.ais.messages.types.ShipType;
+import dk.tbsalling.aismessages.ais.messages.types.TransponderClass;
 
 import javax.annotation.concurrent.Immutable;
 import java.time.Instant;
@@ -16,36 +17,33 @@ import java.time.Instant;
 @Immutable
 public final class AisTrack {
 
-    AisTrack(ShipStaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
-        this.mmsi = ((AISMessage) staticDataReport).getSourceMmsi().getMMSI();
+    AisTrack(StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
         this.staticDataReport = staticDataReport;
         this.dynamicDataReport = null;
         this.timeOfStaticUpdate = timeOfStaticUpdate;
         this.timeOfDynamicUpdate = null;
-
         validateState();
     }
 
-    AisTrack(BasicShipDynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
-        this.mmsi = ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI();
+    AisTrack(DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
         this.staticDataReport = null;
         this.dynamicDataReport = dynamicDataReport;
         this.timeOfStaticUpdate = null;
         this.timeOfDynamicUpdate = timeOfDynamicUpdate;
-
         validateState();
     }
 
-    AisTrack(ShipStaticDataReport staticDataReport, BasicShipDynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
+    AisTrack(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
         long mmsiStatic = staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMMSI() : -1;
         long mmsiDynamic = dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() : -1;
-
         if (mmsiStatic == -1 && mmsiDynamic == -1)
             throw new IllegalArgumentException();
         if (mmsiStatic != -1 && mmsiDynamic != -1 && mmsiStatic != mmsiDynamic)
             throw new IllegalArgumentException("Provided constructor arguments must have same MMSI, not " + mmsiStatic + " and " + mmsiDynamic);
+        if (staticDataReport != null && dynamicDataReport != null && ! staticDataReport.getTransponderClass().equals(dynamicDataReport.getTransponderClass())) {
+            throw new IllegalArgumentException("staticDataReport is from transponder class " + staticDataReport.getTransponderClass() + ", dynamicDataReport is from transponder class " + dynamicDataReport.getTransponderClass() + ". They must be the same.");
+        }
 
-        this.mmsi = mmsiStatic;
         this.staticDataReport = staticDataReport;
         this.dynamicDataReport = dynamicDataReport;
         this.timeOfStaticUpdate = timeOfStaticUpdate;
@@ -56,7 +54,7 @@ public final class AisTrack {
 
     private void validateState() {
         if (staticDataReport == null && dynamicDataReport == null)
-            throw new IllegalArgumentException("A ShipStaticDataReport or BasicShipDynamicDataReport must be provided");
+            throw new IllegalArgumentException("A StaticDataReport or BasicDynamicDataReport must be provided");
         if (staticDataReport != null && timeOfStaticUpdate == null)
             throw new IllegalArgumentException("timeOfStaticUpdate cannot be null when staticDataReport is not");
         if (dynamicDataReport != null && timeOfDynamicUpdate == null)
@@ -70,7 +68,8 @@ public final class AisTrack {
     @Override
     public String toString() {
         return "AisTrack{" +
-                "mmsi=" + mmsi +
+                "mmsi=" + getMmsi() +
+                ", transponderClass=" + getTransponderClass() +
                 ", callsign='" + getCallsign() + '\'' +
                 ", shipName='" + getShipName() + '\'' +
                 ", shipType=" + getShipType() +
@@ -88,7 +87,11 @@ public final class AisTrack {
     }
 
     public long getMmsi() {
-        return mmsi;
+        return dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() : ((AISMessage) staticDataReport).getSourceMmsi().getMMSI();
+    }
+
+    public TransponderClass getTransponderClass() {
+        return dynamicDataReport != null ? dynamicDataReport.getTransponderClass() : staticDataReport.getTransponderClass();
     }
 
     public Instant getTimeOfStaticUpdate() {
@@ -99,11 +102,11 @@ public final class AisTrack {
         return timeOfDynamicUpdate;
     }
 
-    public ShipStaticDataReport getStaticDataReport() {
+    public StaticDataReport getStaticDataReport() {
         return staticDataReport;
     }
 
-    public BasicShipDynamicDataReport getDynamicDataReport() {
+    public DynamicDataReport getDynamicDataReport() {
         return dynamicDataReport;
     }
 
@@ -152,16 +155,15 @@ public final class AisTrack {
     }
 
     public Integer getTrueHeading()  {
-        return dynamicDataReport instanceof ShipDynamicDataReport ? ((ShipDynamicDataReport) dynamicDataReport).getTrueHeading() : null;
+        return dynamicDataReport instanceof ExtendedDynamicDataReport ? ((ExtendedDynamicDataReport) dynamicDataReport).getTrueHeading() : null;
     }
 
     public Integer getSecond()  {
-        return dynamicDataReport instanceof ShipDynamicDataReport ? ((ShipDynamicDataReport) dynamicDataReport).getSecond() : null;
+        return dynamicDataReport instanceof ExtendedDynamicDataReport ? ((ExtendedDynamicDataReport) dynamicDataReport).getSecond() : null;
     }
 
-    private final long mmsi;
-    private final ShipStaticDataReport staticDataReport;
-    private final BasicShipDynamicDataReport dynamicDataReport;
+    private final StaticDataReport staticDataReport;
+    private final DynamicDataReport dynamicDataReport;
     private final Instant timeOfStaticUpdate;
     private final Instant timeOfDynamicUpdate;
 

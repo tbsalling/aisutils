@@ -18,9 +18,9 @@ package dk.tbsalling.ais.tracker;
 
 import com.google.common.collect.ImmutableSet;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
-import dk.tbsalling.aismessages.ais.messages.BasicShipDynamicDataReport;
+import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.Metadata;
-import dk.tbsalling.aismessages.ais.messages.ShipStaticDataReport;
+import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -72,17 +72,17 @@ public class AisTracker {
 
         lock.lock();
         try {
-            if (aisMessage instanceof ShipStaticDataReport) {
+            if (aisMessage instanceof StaticDataReport) {
                 if (isVesselTracked(mmsi)) {
-                    updateVessel(mmsi, (ShipStaticDataReport) aisMessage, messageTimestamp);
+                    updateVessel(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
                 } else {
-                    insertVessel(mmsi, (ShipStaticDataReport) aisMessage, messageTimestamp);
+                    insertVessel(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
                 }
-            } else if (aisMessage instanceof BasicShipDynamicDataReport) {
+            } else if (aisMessage instanceof DynamicDataReport) {
                 if (isVesselTracked(mmsi)) {
-                    updateVessel(mmsi, (BasicShipDynamicDataReport) aisMessage, messageTimestamp);
+                    updateVessel(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
                 } else {
-                    insertVessel(mmsi, (BasicShipDynamicDataReport) aisMessage, messageTimestamp);
+                    insertVessel(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
                 }
             }
         } finally {
@@ -144,15 +144,15 @@ public class AisTracker {
         }
     }
 
-    private void insertVessel(final long mmsi, final ShipStaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
+    private void insertVessel(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         tracks.put(mmsi, new AisTrack(shipStaticDataReport, msgTimestamp));
     }
 
-    private void insertVessel(final long mmsi, final BasicShipDynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
+    private void insertVessel(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         tracks.put(mmsi, new AisTrack(basicShipDynamicDataReport, msgTimestamp));
     }
 
-    private void updateVessel(final long mmsi, final ShipStaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
+    private void updateVessel(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
 
         if (msgTimestamp.isBefore(oldTrack.getTimeOfStaticUpdate()))
@@ -162,7 +162,7 @@ public class AisTracker {
         tracks.put(mmsi, newTrack);
     }
 
-    private void updateVessel(final long mmsi, final BasicShipDynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
+    private void updateVessel(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
 
         if (msgTimestamp.isBefore(oldTrack.getTimeOfDynamicUpdate()))
