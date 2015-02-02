@@ -31,6 +31,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
@@ -152,9 +154,16 @@ public class AisTracker {
                 }
             }
             wallclock = messageTimestamp;
+            if (isHistoryPruningNeeded()) {
+                pruningExecutor.execute(() -> pruneTracks());
+            }
         } finally {
             lock.unlock();
         }
+    }
+
+    private boolean isHistoryPruningNeeded() {
+        return timeOfLastPruning.isBefore(wallclock.minus(PRUNING_PERIOD));
     }
 
     private void insertAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
@@ -209,10 +218,21 @@ public class AisTracker {
                 }
             });
             prunedTracks.forEach((mmsi, track) -> tracks.put(mmsi, prunedTracks.get(mmsi)));
+            timeOfLastPruning = wallclock;
         } finally {
             lock.unlock();
         }
     }
+
+    /** Time on the wall clock between track history pruning jobs */
+    private final static Duration PRUNING_PERIOD = Duration.ofMinutes(5);
+
+    /** The instant in time when the last pruning job ran */
+    @GuardedBy("lock")
+    private Instant timeOfLastPruning = Instant.EPOCH;
+
+    /** Asynchroneous executor service to take care of pruning */
+    private final Executor pruningExecutor = Executors.newSingleThreadExecutor();
 
     /** Max duration to keep dynamic history of each track */
     private final static Duration DYNAMIC_DATA_HISTORY_MAX_AGE = Duration.ofHours(6);
@@ -221,6 +241,6 @@ public class AisTracker {
     private final Predicate<Instant> INSTANT_IMPLIES_PRUNING  = instant -> instant.isBefore(wallclock.minus(DYNAMIC_DATA_HISTORY_MAX_AGE));
 
     /** Predicate for tracks which need pruning of their dynamic history */
-    private final Predicate<AisTrack> TRACK_NEEDS_PRUNING = aisTrack -> INSTANT_IMPLIES_PRUNING.test(aisTrack.getDynamicDataHistory().firstKey());
+    private final Predicate<AisTrack> TRACK_NEEDS_PRUNING = aisTrack -> !aisTrack.getDynamicDataHistory().isEmpty() && INSTANT_IMPLIES_PRUNING.test(aisTrack.getDynamicDataHistory().firstKey());
 
 }
