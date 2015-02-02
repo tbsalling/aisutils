@@ -13,24 +13,6 @@ Some types of AIS messages each carry a fraction of information about a single p
 ### Demo
 Consider that you have a finite or continuous stream of AIS data in NMEA format. Something like this:
 
-``` java
-
-    public class DemoApp {
-
-        public static void main(String [] args) throws IOException {
-            InputStream inputStream = ...
-
-            // Start tracking
-            AisTracker tracker = new AisTracker();
-            tracker.update(inputStream);
-            ...
-        }
-
-    }
-```
-
-The NMEA stream must feed NMEA string like this:
-
 ```
 
     !AIVDM,1,1,,A,15Mv5v?P00IS0J`A86KTROvN0<5k,0*12
@@ -47,6 +29,24 @@ The NMEA stream must feed NMEA string like this:
     !AIVDM,1,1,,B,15MmOb?P00ISh=hA8e5:rgvP25Ip,0*7A
     !AIVDM,1,1,,A,15N0vCPP00ITM6>@rCmcr?vN00SB,0*2A
     !AIVDM,1,1,,A,15NF8f0P00ISHSt@nv3c3OvP2D5>,0*4E
+```
+
+Then you feed it into the tracker like this:
+
+``` java
+
+    public class DemoApp {
+
+        public static void main(String [] args) throws IOException {
+            InputStream inputStream = ...
+
+            // Start tracking
+            AisTracker tracker = new AisTracker();
+            tracker.update(inputStream);
+            ...
+        }
+
+    }
 ```
 
 As the tracker is reading the stream, it builds and maintains the state of each track. Information about the tracker and each
