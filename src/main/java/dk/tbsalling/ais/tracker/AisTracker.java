@@ -35,6 +35,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -84,12 +85,7 @@ public class AisTracker {
      * @return true if the vessel is currently tracked, false if not.
      */
     public boolean isTracked(long mmsi) {
-        lock.lock();
-        try {
-            return tracks.containsKey(mmsi);
-        } finally {
-            lock.unlock();
-        }
+        return threadSafeGet(() -> tracks.containsKey(mmsi));
     }
 
     /**
@@ -97,12 +93,7 @@ public class AisTracker {
      * @return the no of tracks.
      */
     public int getNumberOfAisTracks() {
-        lock.lock();
-        try {
-            return tracks.size();
-        } finally {
-            lock.unlock();
-        }
+        return threadSafeGet(() -> tracks.size());
     }
 
     /**
@@ -111,12 +102,7 @@ public class AisTracker {
      * @return The tracked AisTrack or null if no such track is currently tracked.
      */
     public AisTrack getAisTrack(long mmsi) {
-        lock.lock();
-        try {
-            return tracks.get(mmsi);
-        } finally {
-            lock.unlock();
-        }
+        return threadSafeGet(() -> tracks.get(mmsi));
     }
 
     /**
@@ -124,9 +110,23 @@ public class AisTracker {
      * @return An immutable set of all tracks currently tracked.
      */
     public Set<AisTrack> getAisTracks() {
+        return threadSafeGet(() -> ImmutableSet.copyOf(tracks.values()));
+    }
+
+    /** Return the value of the current wallclock. */
+    public Instant getWallclock() {
+        return threadSafeGet(() -> wallclock);
+    }
+
+    /** Return the instant when track history pruning was last performed. */
+    public Instant getTimeOfLastPruning() {
+        return threadSafeGet(() -> timeOfLastPruning);
+    }
+
+    private <T> T threadSafeGet(Supplier<T> getter) {
         lock.lock();
         try {
-            return ImmutableSet.copyOf(tracks.values());
+            return getter.get();
         } finally {
             lock.unlock();
         }
@@ -163,20 +163,23 @@ public class AisTracker {
     }
 
     private boolean isHistoryPruningNeeded() {
+        /* Assumes lock is locked */
         return timeOfLastPruning.isBefore(wallclock.minus(PRUNING_PERIOD));
     }
 
     private void insertAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
+        /* Assumes lock is locked */
         tracks.put(mmsi, new AisTrack(shipStaticDataReport, msgTimestamp));
     }
 
     private void insertAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
+        /* Assumes lock is locked */
         tracks.put(mmsi, new AisTrack(basicShipDynamicDataReport, msgTimestamp));
     }
 
     private void updateAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
+        /* Assumes lock is locked */
         AisTrack oldTrack = tracks.get(mmsi);
-
         if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
             throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfStaticUpdate());
 
@@ -185,8 +188,8 @@ public class AisTracker {
     }
 
     private void updateAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
+        /* Assumes lock is locked */
         AisTrack oldTrack = tracks.get(mmsi);
-
         if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
             throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfDynamicUpdate());
 
@@ -201,7 +204,7 @@ public class AisTracker {
 
     // --- Fields related to wall clock
 
-    /** Time of last update */
+    /** Time of last update - perceived by the tracker as current time; or time as seen on the wallclock. */
     @GuardedBy("lock")
     private Instant wallclock = Instant.EPOCH;
 
