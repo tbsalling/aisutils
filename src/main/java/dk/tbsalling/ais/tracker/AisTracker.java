@@ -25,6 +25,7 @@ import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackUpdatedEvent;
 import dk.tbsalling.ais.tracker.events.WallclockChangedEvent;
+import dk.tbsalling.aismessages.AISMessageInputStreamReader;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.Metadata;
@@ -34,6 +35,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -65,6 +68,18 @@ public class AisTracker implements TrackEventEmitter {
     public AisTracker() {
         LOG.info("AisTracker created.");
         shutdown = false;
+    }
+
+    /**
+     * Update the tracker from an input stream of NMEA armoured AIS messages.
+     *
+     * If an IOException is thrown, the state of the tracker is maintained, and tracking
+     * is resumed when this method is called again with a new InputStream.
+     *
+     * @param nmeaInputStream
+     */
+    public void update(InputStream nmeaInputStream) throws IOException {
+        new AISMessageInputStreamReader(nmeaInputStream, aisMessage -> update(aisMessage)).run();
     }
 
     /**
