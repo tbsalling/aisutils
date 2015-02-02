@@ -46,10 +46,10 @@ public class AisTrackerTest {
 
     @Test
     public void testIsVesselTracked() throws Exception {
-        assertTrue(tracker.isVesselTracked(211179670));
-        assertTrue(tracker.isVesselTracked(236037000));
-        assertTrue(tracker.isVesselTracked(244660180));
-        assertFalse(tracker.isVesselTracked(219000000));
+        assertTrue(tracker.isTracked(211179670));
+        assertTrue(tracker.isTracked(236037000));
+        assertTrue(tracker.isTracked(244660180));
+        assertFalse(tracker.isTracked(219000000));
     }
 
     @Test

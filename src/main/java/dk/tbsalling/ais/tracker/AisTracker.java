@@ -17,6 +17,7 @@
 package dk.tbsalling.ais.tracker;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.Metadata;
@@ -25,11 +26,13 @@ import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 import static java.util.Objects.requireNonNull;
 
@@ -73,39 +76,12 @@ public class AisTracker {
         updateAisTrack(aisMessage, messageTimestamp);
     }
 
-    private void updateAisTrack(final AISMessage aisMessage, final Instant messageTimestamp) {
-        final long mmsi = aisMessage.getSourceMmsi().getMMSI();
-
-        lock.lock();
-        try {
-            if (messageTimestamp.isBefore(wallclock))
-                throw new IllegalArgumentException("Current time is " + wallclock + "; message timestamp is too old: " + messageTimestamp);
-
-            if (aisMessage instanceof StaticDataReport) {
-                if (isVesselTracked(mmsi)) {
-                    updateVessel(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
-                } else {
-                    insertVessel(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
-                }
-            } else if (aisMessage instanceof DynamicDataReport) {
-                if (isVesselTracked(mmsi)) {
-                    updateVessel(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
-                } else {
-                    insertVessel(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
-                }
-            }
-            wallclock = messageTimestamp;
-        } finally {
-            lock.unlock();
-        }
-    }
-
     /**
      * Check if a given vessel is currently tracked by the tracker.
      * @param mmsi The MMSI no.
      * @return true if the vessel is currently tracked, false if not.
      */
-    public boolean isVesselTracked(long mmsi) {
+    public boolean isTracked(long mmsi) {
         lock.lock();
         try {
             return tracks.containsKey(mmsi);
@@ -154,15 +130,42 @@ public class AisTracker {
         }
     }
 
-    private void insertVessel(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
+    private void updateAisTrack(final AISMessage aisMessage, final Instant messageTimestamp) {
+        final long mmsi = aisMessage.getSourceMmsi().getMMSI();
+
+        lock.lock();
+        try {
+            if (messageTimestamp.isBefore(wallclock))
+                throw new IllegalArgumentException("Current time is " + wallclock + "; message timestamp is too old: " + messageTimestamp);
+
+            if (aisMessage instanceof StaticDataReport) {
+                if (isTracked(mmsi)) {
+                    updateAisTrack(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
+                } else {
+                    insertAisTrack(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
+                }
+            } else if (aisMessage instanceof DynamicDataReport) {
+                if (isTracked(mmsi)) {
+                    updateAisTrack(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
+                } else {
+                    insertAisTrack(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
+                }
+            }
+            wallclock = messageTimestamp;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void insertAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         tracks.put(mmsi, new AisTrack(shipStaticDataReport, msgTimestamp));
     }
 
-    private void insertVessel(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
+    private void insertAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         tracks.put(mmsi, new AisTrack(basicShipDynamicDataReport, msgTimestamp));
     }
 
-    private void updateVessel(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
+    private void updateAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
 
         if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
@@ -172,7 +175,7 @@ public class AisTracker {
         tracks.put(mmsi, newTrack);
     }
 
-    private void updateVessel(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
+    private void updateAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         AisTrack oldTrack = tracks.get(mmsi);
 
         if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
@@ -187,8 +190,37 @@ public class AisTracker {
     @GuardedBy("lock")
     private Map<Long, AisTrack> tracks = new HashMap<>();
 
+    // --- Fields related to wall clock
+
     /** Time of last update */
     @GuardedBy("lock")
     private Instant wallclock = Instant.EPOCH;
+
+    // --- Fields and methods related to pruning
+
+    /** Run through all tracks and prune historic items which have expired */
+    private void pruneTracks() {
+        lock.lock();
+        try {
+            Map<Long, AisTrack> prunedTracks = Maps.newTreeMap();
+            tracks.forEach((mmsi, track) -> {
+                if (TRACK_NEEDS_PRUNING.test(track)) {
+                    prunedTracks.put(track.getMmsi(), new AisTrack(track, INSTANT_IMPLIES_PRUNING));
+                }
+            });
+            prunedTracks.forEach((mmsi, track) -> tracks.put(mmsi, prunedTracks.get(mmsi)));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /** Max duration to keep dynamic history of each track */
+    private final static Duration DYNAMIC_DATA_HISTORY_MAX_AGE = Duration.ofHours(6);
+
+    /** Predicate for instants which imply that pruning is required */
+    private final Predicate<Instant> INSTANT_IMPLIES_PRUNING  = instant -> instant.isBefore(wallclock.minus(DYNAMIC_DATA_HISTORY_MAX_AGE));
+
+    /** Predicate for tracks which need pruning of their dynamic history */
+    private final Predicate<AisTrack> TRACK_NEEDS_PRUNING = aisTrack -> INSTANT_IMPLIES_PRUNING.test(aisTrack.getDynamicDataHistory().firstKey());
 
 }
