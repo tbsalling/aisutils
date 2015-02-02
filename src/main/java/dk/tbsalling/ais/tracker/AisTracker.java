@@ -18,6 +18,7 @@ package dk.tbsalling.ais.tracker;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
@@ -392,7 +393,7 @@ public class AisTracker implements TrackEventEmitter {
     // The event bus is Guava Eventbus - see more: http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/eventbus/EventBus.html
     //
 
-    private final EventBus eventBus = new EventBus();
+    private final EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
 
     @Override
     public void registerSubscriber(Object subscriber) {
