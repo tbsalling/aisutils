@@ -18,10 +18,18 @@ package dk.tbsalling.ais.tracker;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
+import com.google.common.eventbus.EventBus;
+import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
+import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
+import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
+import dk.tbsalling.ais.tracker.events.AisTrackUpdatedEvent;
+import dk.tbsalling.ais.tracker.events.WallclockChangedEvent;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.Metadata;
 import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -31,8 +39,9 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -48,7 +57,14 @@ import static java.util.Objects.requireNonNull;
  * later on.
  */
 @ThreadSafe
-public class AisTracker {
+public class AisTracker implements TrackEventEmitter {
+
+    private final static Logger LOG = LoggerFactory.getLogger(AisTracker.class);
+
+    public AisTracker() {
+        LOG.info("AisTracker created.");
+        shutdown = false;
+    }
 
     /**
      * Update the tracker with a new AIS message.
@@ -59,6 +75,9 @@ public class AisTracker {
      * @param aisMessage the AIS message.
      */
     public void update(AISMessage aisMessage) {
+        if (threadSafeGet(() -> shutdown))
+            throw new IllegalStateException("Tracker has been requested to shutdown.");
+
         requireNonNull(aisMessage);
 
         Metadata metadata = aisMessage.getMetadata();
@@ -73,6 +92,9 @@ public class AisTracker {
      * @param messageTimestamp the time this AIS message was received.
      */
     public void update(AISMessage aisMessage, Instant messageTimestamp) {
+        if (threadSafeGet(() -> shutdown))
+            throw new IllegalStateException("Tracker has been requested to shutdown.");
+
         requireNonNull(aisMessage);
         requireNonNull(messageTimestamp);
 
@@ -123,6 +145,29 @@ public class AisTracker {
         return threadSafeGet(() -> timeOfLastPruning);
     }
 
+    public boolean isShutdown() {
+        return threadSafeGet(() -> shutdown);
+    }
+
+    /** Shut down the tracker */
+    public void shutdown() {
+        LOG.info("AisTracker shutdown requested.");
+        lock.lock();
+        try {
+            shutdown = true;
+        } finally {
+            lock.unlock();
+        }
+        try {
+            taskExecutor.shutdown();
+            taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
+            LOG.debug("taskExecutor: shutdown:" + taskExecutor.isShutdown() + " terminated:" + taskExecutor.isTerminated());
+        } catch (InterruptedException e) {
+            LOG.error("Tracker failed to shutdown cleanly", e);
+        }
+        LOG.info("AisTracker shutdown completed.");
+    }
+
     private <T> T threadSafeGet(Supplier<T> getter) {
         lock.lock();
         try {
@@ -140,6 +185,8 @@ public class AisTracker {
             if (messageTimestamp.isBefore(wallclock))
                 throw new IllegalArgumentException("Current time is " + wallclock + "; message timestamp is too old: " + messageTimestamp);
 
+            setWallclock(messageTimestamp);
+
             if (aisMessage instanceof StaticDataReport) {
                 if (isTracked(mmsi)) {
                     updateAisTrack(mmsi, (StaticDataReport) aisMessage, messageTimestamp);
@@ -153,28 +200,29 @@ public class AisTracker {
                     insertAisTrack(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
                 }
             }
-            wallclock = messageTimestamp;
-            if (isHistoryPruningNeeded()) {
-                pruningExecutor.execute(() -> pruneTracks());
+            if (isHistoryPruneNeeded()) {
+                taskExecutor.execute(() -> processTrackHistory());
+            }
+            if (isStaleCheckNeeded()) {
+                taskExecutor.execute(() -> processStaleTracks());
             }
         } finally {
             lock.unlock();
         }
     }
 
-    private boolean isHistoryPruningNeeded() {
-        /* Assumes lock is locked */
-        return timeOfLastPruning.isBefore(wallclock.minus(PRUNING_PERIOD));
-    }
-
     private void insertAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         /* Assumes lock is locked */
-        tracks.put(mmsi, new AisTrack(shipStaticDataReport, msgTimestamp));
+        final AisTrack aisTrack = new AisTrack(shipStaticDataReport, msgTimestamp);
+        tracks.put(mmsi, aisTrack);
+        fireTrackCreated(aisTrack);
     }
 
     private void insertAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         /* Assumes lock is locked */
-        tracks.put(mmsi, new AisTrack(basicShipDynamicDataReport, msgTimestamp));
+        final AisTrack aisTrack = new AisTrack(basicShipDynamicDataReport, msgTimestamp);
+        tracks.put(mmsi, aisTrack);
+        fireTrackCreated(aisTrack);
     }
 
     private void updateAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
@@ -185,6 +233,7 @@ public class AisTracker {
 
         AisTrack newTrack = new AisTrack(shipStaticDataReport, oldTrack.getDynamicDataReport(), msgTimestamp, oldTrack.getTimeOfDynamicUpdate());
         tracks.put(mmsi, newTrack);
+        fireTrackUpdated(newTrack);
     }
 
     private void updateAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
@@ -195,23 +244,55 @@ public class AisTracker {
 
         AisTrack newTrack = new AisTrack(oldTrack.getStaticDataReport(), basicShipDynamicDataReport, oldTrack.getTimeOfStaticUpdate(), msgTimestamp);
         tracks.put(mmsi, newTrack);
+        fireTrackUpdated(newTrack);
+        fireTrackDynamicsUpdated(newTrack);
     }
 
+    //
+    // Core data fields of the tracker
+    //
+
     private ReentrantLock lock = new ReentrantLock();
+
+    /** */
+    @GuardedBy("lock")
+    private boolean shutdown = false;
 
     @GuardedBy("lock")
     private Map<Long, AisTrack> tracks = new HashMap<>();
 
-    // --- Fields related to wall clock
+    /** To inject special executors for unit testing */
+    void setTaskExecutor(ExecutorService taskExecutor) {
+        this.taskExecutor = taskExecutor;
+    }
+
+    /** Asynchroneous executor service to take care of pruning */
+    private ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
+
+    //
+    // Fields and methods related to the wallclock
+    //
 
     /** Time of last update - perceived by the tracker as current time; or time as seen on the wallclock. */
     @GuardedBy("lock")
     private Instant wallclock = Instant.EPOCH;
 
-    // --- Fields and methods related to pruning
+    private void setWallclock(Instant wallclock) {
+        lock.lock();
+        try {
+            this.wallclock = wallclock;
+            fireWallclockChanged(this.wallclock);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    //
+    // Fields and methods related to pruning
+    //
 
     /** Run through all tracks and prune historic items which have expired */
-    private void pruneTracks() {
+    private void processTrackHistory() {
         lock.lock();
         try {
             Map<Long, AisTrack> prunedTracks = Maps.newTreeMap();
@@ -227,15 +308,17 @@ public class AisTracker {
         }
     }
 
+    private boolean isHistoryPruneNeeded() {
+        /* Assumes lock is locked */
+        return timeOfLastPruning.isBefore(wallclock.minus(PRUNE_CHECK_PERIOD));
+    }
+
     /** Time on the wall clock between track history pruning jobs */
-    private final static Duration PRUNING_PERIOD = Duration.ofMinutes(5);
+    private final static Duration PRUNE_CHECK_PERIOD = Duration.ofMinutes(5);
 
     /** The instant in time when the last pruning job ran */
     @GuardedBy("lock")
     private Instant timeOfLastPruning = Instant.EPOCH;
-
-    /** Asynchroneous executor service to take care of pruning */
-    private final Executor pruningExecutor = Executors.newSingleThreadExecutor();
 
     /** Max duration to keep dynamic history of each track */
     private final static Duration DYNAMIC_DATA_HISTORY_MAX_AGE = Duration.ofHours(6);
@@ -246,4 +329,94 @@ public class AisTracker {
     /** Predicate for tracks which need pruning of their dynamic history */
     private final Predicate<AisTrack> TRACK_NEEDS_PRUNING = aisTrack -> !aisTrack.getDynamicDataHistory().isEmpty() && INSTANT_IMPLIES_PRUNING.test(aisTrack.getDynamicDataHistory().firstKey());
 
+    //
+    // Fields and methods related to track stale check
+    //
+
+    /** Run through all tracks and note which ones are stale */
+    private void processStaleTracks() {
+        lock.lock();
+        try {
+            Map<Long, AisTrack> staleTracks = Maps.newTreeMap();
+            tracks.forEach((mmsi, track) -> {
+                if (track.getTimeOfLastUpdate().isBefore(wallclock.minus(STALE_PERIOD))) {
+                    staleTracks.put(mmsi, track);
+                }
+            });
+            staleTracks.forEach((mmsi, track) -> { tracks.remove(mmsi); fireTrackDeleted(track); });
+            timeOfLastStaleCheck = wallclock;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private boolean isStaleCheckNeeded() {
+        lock.lock();
+        try {
+            return timeOfLastStaleCheck.isBefore(wallclock.minus(STALE_CHECK_PERIOD));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    void setStaleCheckPeriod(Duration staleCheckPeriod) {
+        lock.lock();
+        try {
+            STALE_CHECK_PERIOD = staleCheckPeriod;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    void setStalePeriod(Duration stalePeriod) {
+        lock.lock();
+        try {
+            STALE_PERIOD = stalePeriod;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /** Every this duration on the wallclock tracks are checked to be stale */
+    private Duration STALE_CHECK_PERIOD = Duration.ofMinutes(1);
+
+    /** Tracks not updated within this duration are considered stale. */
+    private Duration STALE_PERIOD = Duration.ofMinutes(30);
+
+    /** The instant in time when the last pruning job ran */
+    @GuardedBy("lock")
+    private Instant timeOfLastStaleCheck = Instant.EPOCH;
+
+    //
+    // Fields and methods related to event firing
+    // The event bus is Guava Eventbus - see more: http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/eventbus/EventBus.html
+    //
+
+    private final EventBus eventBus = new EventBus();
+
+    @Override
+    public void registerSubscriber(Object subscriber) {
+        eventBus.register(subscriber);
+        LOG.info("Subscribed to tracker events: " + subscriber);
+    }
+
+    private void fireTrackCreated(AisTrack track) {
+        eventBus.post(new AisTrackCreatedEvent(track));
+    }
+
+    private void fireTrackUpdated(AisTrack track) {
+        eventBus.post(new AisTrackUpdatedEvent(track));
+    }
+
+    private void fireTrackDynamicsUpdated(AisTrack track) {
+        eventBus.post(new AisTrackDynamicsUpdatedEvent(track));
+    }
+
+    private void fireTrackDeleted(AisTrack track) {
+        eventBus.post(new AisTrackDeletedEvent(track));
+    }
+
+    private void fireWallclockChanged(Instant wallclock) {
+        eventBus.post(new WallclockChangedEvent(getWallclock()));
+    }
 }

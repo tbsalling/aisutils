@@ -174,6 +174,8 @@ public final class AisTrack {
             throw new IllegalArgumentException("timeOfStaticUpdate cannot be provided when staticDataReport is not");
         if (timeOfDynamicUpdate != null && dynamicDataReport == null)
             throw new IllegalArgumentException("timeOfDynamicUpdate cannot be provided when dynamicDataReport is not");
+        if (getMmsi() <= 0) // TODO http://en.wikipedia.org/wiki/Maritime_Mobile_Service_Identity
+            throw new IllegalArgumentException("MMSI " + getMmsi() + " is invalid.");
     }
 
     @Override

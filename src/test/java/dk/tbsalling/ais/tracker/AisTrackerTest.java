@@ -37,11 +37,12 @@ public class AisTrackerTest {
                 System.err.println(msg.getSourceMmsi() + ": " + e.getMessage());
             }
         });
+        tracker.shutdown();
     }
 
     @Test
     public void testGetNumberOfAisTracks() {
-        assertEquals(917, tracker.getNumberOfAisTracks());
+        assertEquals(916, tracker.getNumberOfAisTracks());
     }
 
     @Test
@@ -61,9 +62,9 @@ public class AisTrackerTest {
 
         assertEquals(236037000, track.getMmsi());
 
-        assertEquals(Instant.parse("2015-01-30T12:16:36.611Z"), track.getTimeOfLastUpdate());
+        assertEquals(Instant.parse("2015-01-30T12:16:35.611Z"), track.getTimeOfLastUpdate());
         assertEquals(Instant.parse("2015-01-30T12:07:27.611Z"), track.getTimeOfStaticUpdate());
-        assertEquals(Instant.parse("2015-01-30T12:16:36.611Z"), track.getTimeOfDynamicUpdate());
+        assertEquals(Instant.parse("2015-01-30T12:16:35.611Z"), track.getTimeOfDynamicUpdate());
 
         assertEquals(57.48651885986328, track.getLatitude(), 1e-5);
         assertEquals(11.340173721313477, track.getLongitude(), 1e-5);
@@ -75,7 +76,7 @@ public class AisTrackerTest {
     @Test
     public void testGetAisTracks() throws Exception {
         Set<AisTrack> aisTracks = tracker.getAisTracks();
-        assertEquals(917, aisTracks.size());
+        assertEquals(916, aisTracks.size());
 
         final boolean[] found = {false};
         aisTracks.forEach(track -> { if (track.getMmsi() == 236037000) found[0] = true; });
@@ -101,4 +102,5 @@ public class AisTrackerTest {
             }
         }
     }
+
 }
