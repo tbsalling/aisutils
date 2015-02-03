@@ -1,36 +1,50 @@
 package dk.tbsalling.ais.tracker.demo;
 
-import dk.tbsalling.ais.tracker.AisTrack;
+import com.google.common.eventbus.Subscribe;
 import dk.tbsalling.ais.tracker.AisTracker;
+import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
+import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
+import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
+import dk.tbsalling.ais.tracker.events.AisTrackUpdatedEvent;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Set;
 
-public class DemoApp {
+public class EventDemoApp {
 
-    public static void main(String [] args) throws IOException {
-        InputStream inputStream = new ByteArrayInputStream(nmea.getBytes());
+    public static void main(String [] args) throws IOException, InterruptedException {
 
+        // Create the tracker
         AisTracker tracker = new AisTracker();
-        tracker.update(inputStream);
 
-        // Get stats from tracker
-        System.out.println("No. of current tracks in tracker: " + tracker.getNumberOfAisTracks());
+        // Register event listeners
+        tracker.registerSubscriber(new Object() {
+            @Subscribe
+            public void handleEvent(AisTrackCreatedEvent event) {
+                System.out.println("CREATED: " + event.getAisTrack());
+            }
 
-        // Get all tracks from tracker
-        Set<AisTrack> tracks = tracker.getAisTracks();
-        AisTrack aRandomTrack = tracks.iterator().next();
-        System.out.println("A random MMSI " + aRandomTrack.getMmsi());
+            @Subscribe
+            public void handleEvent(AisTrackUpdatedEvent event) {
+                System.out.println("UPDATED: " + event.getAisTrack());
+            }
 
-        // Get a specific track from tracker
-        AisTrack track = tracker.getAisTrack(219997000);
-        System.out.println(
-            "Tracking vessel with name: " + track.getShipName() +
-            ", callsign: " + track.getCallsign() +
-            " currently cruising at " + track.getSpeedOverGround() + " knots."
-        );
+            @Subscribe
+            public void handleEvent(AisTrackDynamicsUpdatedEvent event) {
+                System.out.println("UPDATED DYNAMICS: " + event.getAisTrack());
+            }
+
+            @Subscribe
+            public void handleEvent(AisTrackDeletedEvent event) {
+                System.out.println("DELETED: " + event.getAisTrack());
+            }
+        });
+
+        // Read AIS data forever
+        do {
+            tracker.update(new ByteArrayInputStream(nmea.getBytes()));
+            Thread.sleep(1000);
+        } while (true);
 
     }
 

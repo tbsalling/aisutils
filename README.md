@@ -8,13 +8,20 @@ free-text filter expressions for AIS messages, event triggering, message archivi
 ## AIS Tracker
 
 ### The problem
-Some types of AIS messages each carry a fraction of information about a single physical track.
+Different types of AIS messages carry different types of information about the same physical
+vessel. For instance a vessel's name is carried in messages of type 5, whereas its position
+can be carried in messages of type 1.
+
+In order to collect the complete information about a vessel, information split across different
+AIS messages must therefore be collected and consolidated. This is what the tracker does. Feed it
+with a AIS messages in NMEA format - and you will get Tracks in return.
 
 ### Demo
-Consider that you have a finite or continuous stream of AIS data in NMEA format. Something like this:
+So, consider that you have a finite or continuous stream of AIS data in NMEA format.
+Something like this:
 
 ```
-
+    ...
     !AIVDM,1,1,,A,15Mv5v?P00IS0J`A86KTROvN0<5k,0*12
     !AIVDM,1,1,,A,15Mwd<PP00ISfGpA7jBr??vP0<3:,0*04
     !AIVDM,2,1,4,B,55MwW7P00001L@?;GS0<51B08Thj0TdpE800000P0hD556IE07RlSm6P0000,0*0B
@@ -24,14 +31,10 @@ Consider that you have a finite or continuous stream of AIS data in NMEA format.
     !AIVDM,1,1,,B,15MuS0PP00IS00HA8gEtSgvN0<3U,0*61
     !AIVDM,1,1,,A,16K8Au@000awU:FD9l?JcnrP289D,0*15
     !AIVDM,1,1,,A,15MwP=0000ISS5lA7=qJ57jL05Ip,0*0D
-    !AIVDM,1,1,,B,15NF:5g007qTHIhA:wWrK2nN089A,0*3A
-    !AIVDM,1,1,,A,15N8<TPP00IRlor@ktvdDgvN0D56,0*77
-    !AIVDM,1,1,,B,15MmOb?P00ISh=hA8e5:rgvP25Ip,0*7A
-    !AIVDM,1,1,,A,15N0vCPP00ITM6>@rCmcr?vN00SB,0*2A
-    !AIVDM,1,1,,A,15NF8f0P00ISHSt@nv3c3OvP2D5>,0*4E
+    ...
 ```
 
-Then you feed it into the tracker like this:
+Then you feed it into the tracker from a regular Java InputStream:
 
 ``` java
 
@@ -78,7 +81,67 @@ track can be read out at any time from any thread:
 ```
 
 In addition to this, it is possible register event listeners, so that your application is instantly notified
-whenever a track is created, updated, or deleted.
+whenever a track is created, updated, or deleted. The mechanism works like this:
+
+``` java
+
+    import com.google.common.eventbus.Subscribe;
+    import dk.tbsalling.ais.tracker.AisTrack;
+    import dk.tbsalling.ais.tracker.AisTracker;
+    import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
+    import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
+    import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
+    import dk.tbsalling.ais.tracker.events.AisTrackUpdatedEvent;
+    ...
+
+    public class EventDemoApp {
+
+        public static void main(String [] args) throws IOException, InterruptedException {
+
+            // Create the tracker
+            AisTracker tracker = new AisTracker();
+
+            // Register event listeners
+            tracker.registerSubscriber(new Object() {
+                @Subscribe
+                public void handleEvent(AisTrackCreatedEvent event) {
+                    System.out.println("CREATED: " + event.getAisTrack());
+                }
+
+                @Subscribe
+                public void handleEvent(AisTrackUpdatedEvent event) {
+                    System.out.println("UPDATED: " + event.getAisTrack());
+                }
+
+                @Subscribe
+                public void handleEvent(AisTrackDynamicsUpdatedEvent event) {
+                    System.out.println("UPDATED DYNAMICS: " + event.getAisTrack());
+                }
+
+                @Subscribe
+                public void handleEvent(AisTrackDeletedEvent event) {
+                    System.out.println("DELETED: " + event.getAisTrack());
+                }
+            });
+
+            // Feed AIS Data into tracker
+            InputStream aisInputStream = ...;
+            tracker.update(aisInputStream);
+        }
+    }
+```
+
+As the input stream is read, this will produce output like this:
+
+```
+CREATED: AisTrack{mmsi=258315000, transponderClass=A, callsign='LFNA', shipName='FALKVIK', shipType=CargoNoAdditionalInfo, toBow=40, toStern=10, toStarboard=5, toPort=4, latitude=null, longitude=null, speedOverGround=null, courseOverGround=null, trueHeading=null, second=null}
+CREATED: AisTrack{mmsi=440009390, transponderClass=A, callsign='null', shipName='null', shipType=null, toBow=null, toStern=null, toStarboard=null, toPort=null, latitude=37.452908, longitude=126.611946, speedOverGround=0.0, courseOverGround=55.2, trueHeading=511, second=15}
+UPDATED: AisTrack{mmsi=366970360, transponderClass=A, callsign='null', shipName='null', shipType=null, toBow=null, toStern=null, toStarboard=null, toPort=null, latitude=29.93085, longitude=-90.2198, speedOverGround=0.0, courseOverGround=116.1, trueHeading=511, second=15}
+UPDATED DYNAMICS: AisTrack{mmsi=366970360, transponderClass=A, callsign='null', shipName='null', shipType=null, toBow=null, toStern=null, toStarboard=null, toPort=null, latitude=29.93085, longitude=-90.2198, speedOverGround=0.0, courseOverGround=116.1, trueHeading=511, second=15}
+CREATED: AisTrack{mmsi=244670316, transponderClass=A, callsign='null', shipName='null', shipType=null, toBow=null, toStern=null, toStarboard=null, toPort=null, latitude=51.89475, longitude=4.379285, speedOverGround=0.0, courseOverGround=70.6, trueHeading=511, second=14}
+CREATED: AisTrack{mmsi=205264890, transponderClass=A, callsign='null', shipName='null', shipType=null, toBow=null, toStern=null, toStarboard=null, toPort=null, latitude=51.309635, longitude=4.3227935, speedOverGround=0.0, courseOverGround=338.0, trueHeading=339, second=15}
+...
+```
 
 ## How to get, build and include AISutils in your project
 There's no formal release yet. But you can download AISutils from Github and and build it using maven:
