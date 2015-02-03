@@ -25,7 +25,7 @@ import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackUpdatedEvent;
 import dk.tbsalling.ais.tracker.events.WallclockChangedEvent;
-import dk.tbsalling.aismessages.AISMessageInputStreamReader;
+import dk.tbsalling.aismessages.AISInputStreamReader;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.Metadata;
@@ -79,7 +79,7 @@ public class AisTracker implements TrackEventEmitter {
      * @param nmeaInputStream
      */
     public void update(InputStream nmeaInputStream) throws IOException {
-        new AISMessageInputStreamReader(nmeaInputStream, aisMessage -> update(aisMessage)).run();
+        new AISInputStreamReader(nmeaInputStream, aisMessage -> update(aisMessage)).run();
     }
 
     /**
