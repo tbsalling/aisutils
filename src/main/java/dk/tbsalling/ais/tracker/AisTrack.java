@@ -22,9 +22,9 @@ import static java.util.Objects.requireNonNull;
  * of several received AIS messages.
  */
 @Immutable
-public final class AisTrack {
+public final class AISTrack {
 
-    AisTrack(StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
+    AISTrack(StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
         requireNonNull(staticDataReport);
         requireNonNull(timeOfStaticUpdate);
         validateArgs(staticDataReport, null, timeOfStaticUpdate, null);
@@ -38,7 +38,7 @@ public final class AisTrack {
         validateState();
     }
 
-    AisTrack(DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
+    AISTrack(DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
         requireNonNull(dynamicDataReport);
         requireNonNull(timeOfDynamicUpdate);
         validateArgs(null, dynamicDataReport, null, timeOfDynamicUpdate);
@@ -52,7 +52,7 @@ public final class AisTrack {
         validateState();
     }
 
-    AisTrack(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
+    AISTrack(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
         validateArgs(staticDataReport, dynamicDataReport, timeOfStaticUpdate, timeOfDynamicUpdate);
 
         this.staticDataReport = staticDataReport;
@@ -67,7 +67,7 @@ public final class AisTrack {
     /**
      * Create a new AisTrack using another track to build history.
      */
-    AisTrack(AisTrack oldTrack, StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
+    AISTrack(AISTrack oldTrack, StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
         requireNonNull(staticDataReport);
         requireNonNull(timeOfStaticUpdate);
         validateArgs(staticDataReport, null, timeOfStaticUpdate, null);
@@ -84,7 +84,7 @@ public final class AisTrack {
     /**
      * Create a new AisTrack using another track to build history.
      */
-    AisTrack(AisTrack oldTrack, DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
+    AISTrack(AISTrack oldTrack, DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
         requireNonNull(dynamicDataReport);
         requireNonNull(timeOfDynamicUpdate);
         validateArgs(null, dynamicDataReport, null, timeOfDynamicUpdate);
@@ -101,7 +101,7 @@ public final class AisTrack {
     /**
      * Create a new AisTrack using another track to build history.
      */
-    AisTrack(AisTrack oldTrack, StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
+    AISTrack(AISTrack oldTrack, StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
         validateArgs(staticDataReport, dynamicDataReport, timeOfStaticUpdate, timeOfDynamicUpdate);
 
         this.staticDataReport = staticDataReport;
@@ -113,7 +113,7 @@ public final class AisTrack {
         validateState();
     }
 
-    private ImmutableSortedMap<Instant, DynamicDataReport> copyDynamicHistory(AisTrack oldTrack) {
+    private ImmutableSortedMap<Instant, DynamicDataReport> copyDynamicHistory(AISTrack oldTrack) {
         ImmutableSortedMap<Instant, DynamicDataReport> dynamicHistory = null;
 
         if (oldTrack.timeOfDynamicUpdate != null && oldTrack.dynamicDataReport != null) {
@@ -127,7 +127,7 @@ public final class AisTrack {
     }
 
     /** Copy constructor with support for pruning */
-    AisTrack(AisTrack originalTrack, Predicate<Instant> keepInstantPredicate) {
+    AISTrack(AISTrack originalTrack, Predicate<Instant> keepInstantPredicate) {
         this.staticDataReport = originalTrack.staticDataReport;
         this.dynamicDataReport = originalTrack.dynamicDataReport;
 
