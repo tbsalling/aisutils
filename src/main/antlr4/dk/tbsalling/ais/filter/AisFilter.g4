@@ -7,10 +7,9 @@ filterExpression:           #root
     //|   MSGID (in|notin) (intRange|intList)
     |   MMSI compareToInt INT  #mmsi
     //|   MMSI (in|notin) (intRange|intList)
-    //|   filterExpression (op=(AND|OR) filterExpression)+
     //|   '(' filterExpression ')'
 
-    |   left=filterExpression (op=AND right=filterExpression)+ # and
+    |   left=filterExpression (op=(AND|OR) right=filterExpression)+ # and
    // |   '(' filterExpression ')'                    # parens
     ;
 
@@ -35,8 +34,8 @@ lt : '<';
 //number : INT|FLOAT;
 //string : number|STRING;
 
-AND     : '&' ;
-//OR      : '|' ;
+AND     : '&' | 'and' ;
+OR      : '|' | 'or';
 //RANGE   : '..';
 INT     : '-'? [0-9]+;
 //FLOAT   : '-'? [0-9]* '.' [0-9]+ ;

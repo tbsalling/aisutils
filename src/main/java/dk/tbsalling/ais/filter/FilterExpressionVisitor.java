@@ -12,7 +12,13 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<BiPredicate<AI
     @Override public BiPredicate<AISMessage, AISTrack> visitAnd(AisFilterParser.AndContext ctx) {
         BiPredicate<AISMessage, AISTrack> left = visit(ctx.left);
         BiPredicate<AISMessage, AISTrack> right = visit(ctx.right);
-        return left.and(right);
+
+        if (ctx.AND() != null && !ctx.AND().isEmpty())
+            return left.and(right);
+        else if (ctx.OR() != null && !ctx.OR().isEmpty())
+            return left.or(right);
+        else
+            throw new IllegalStateException("Unknown operator: " + ctx.op.getText());
     }
 
     @Override
