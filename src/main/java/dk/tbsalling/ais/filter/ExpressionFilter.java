@@ -40,9 +40,7 @@ public class ExpressionFilter implements Predicate<AISMessage> {
 
     private final static Logger LOG = LoggerFactory.getLogger(ExpressionFilter.class);
 
-    private final BiPredicate<AISMessage, AISTrack> filter;
-
-    private final AISTracker tracker = new AISTracker();
+    private final Predicate<AISMessage> filter;
 
     private ExpressionFilter() {
         filter = null;
@@ -81,11 +79,6 @@ public class ExpressionFilter implements Predicate<AISMessage> {
      */
     @Override
     public boolean test(AISMessage aisMessage) {
-        AISTrack aisTrack = null;
-        if (aisMessage instanceof DynamicDataReport || aisMessage instanceof StaticDataReport) {
-            tracker.update(aisMessage);
-            aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
-        }
-        return filter.test(aisMessage, aisTrack);
+        return filter.test(aisMessage);
     }
 }

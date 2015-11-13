@@ -1,6 +1,10 @@
 package dk.tbsalling.ais.filter;
 
+import dk.tbsalling.ais.tracker.AISTrack;
+import dk.tbsalling.ais.tracker.AISTracker;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
+import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
+import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import dk.tbsalling.aismessages.nmea.NMEAMessageHandler;
 import dk.tbsalling.aismessages.nmea.exceptions.InvalidMessage;
 import dk.tbsalling.aismessages.nmea.messages.NMEAMessage;
@@ -67,6 +71,53 @@ public class ExpressionFilterTest {
         verifyExpressionFilter("msgid=1 and mmsi=227006760", msg -> msg.getMessageType().getCode() == 1 && msg.getSourceMmsi().getMMSI() == 227006760);
     }
 
+    //
+    // Test SOG
+    //
+    @Test
+    public void testSogGreaterThan() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("sog>5.9", msg -> { // triggers visitSog
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return ((DynamicDataReport) msg).getSpeedOverGround() > 5.9;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float sog = track.getSpeedOverGround();
+                if (sog == null)
+                    sog = 0.0f;
+                return sog > 5.9;
+            } else
+                return true;
+        });
+    }
+
+    @Test
+    public void testSogGreaterThan2() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("sog>5.9 or mmsi=1", msg -> { // triggers visitAndOr
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return ((DynamicDataReport) msg).getSpeedOverGround() > 5.9;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float sog = track.getSpeedOverGround();
+                if (sog == null)
+                    sog = 0.0f;
+                return sog > 5.9;
+            } else
+                return true;
+        });
+    }
+
+    //
+    // Internal methods
+    //
+
     private static void verifyExpressionFilter(String filterExpression, Predicate<AISMessage> verification) throws Exception {
         final Predicate<AISMessage> expressionFilter = FilterFactory.newExpressionFilter(filterExpression);
         final InputStream inputStream = Thread.currentThread().getContextClassLoader().getResource("ais-sample-1.nmea").openStream();
@@ -76,6 +127,7 @@ public class ExpressionFilterTest {
 
         processAISInputStream(inputStream, msg -> {
             try {
+                System.err.println("Testing " + msg);
                 boolean test = expressionFilter.test(msg);
                 if (verification.test(msg)) {
                     assertTrue(test);
