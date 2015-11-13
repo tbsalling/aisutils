@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class AisTrackerEventsTest {
+public class AISTrackerEventsTest {
 
     @Test
     public void testEvents() throws Exception {
@@ -35,7 +35,7 @@ public class AisTrackerEventsTest {
         final AtomicInteger numDynamicUpdateEvents = new AtomicInteger();
         final AtomicInteger numDeleteEvents = new AtomicInteger();
 
-        AisTracker aisTracker = new AisTracker();
+        AISTracker aisTracker = new AISTracker();
         aisTracker.setStalePeriod(Duration.ofMinutes(10));
         aisTracker.setStaleCheckPeriod(Duration.ofMinutes(1));
         aisTracker.setTaskExecutor(new CurrentThreadExecutor());

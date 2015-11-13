@@ -16,26 +16,19 @@
 
 package dk.tbsalling.ais.filter;
 
-import ;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import dk.tbsalling.ais.filter.AisFilterParser.FilterExpressionContext;
-import dk.tbsalling.ais.tracker.AisTrack;
-import dk.tbsalling.ais.tracker.AisTracker;
+import dk.tbsalling.ais.tracker.AISTrack;
+import dk.tbsalling.ais.tracker.AISTracker;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.util.List;
-import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /**
@@ -43,15 +36,19 @@ import java.util.function.Predicate;
  * of AIS messages.
  */
 @ThreadSafe
-public class AisExpressionFilter implements Predicate<AISMessage> {
+public class ExpressionFilter implements Predicate<AISMessage> {
 
-    private final static Logger LOG = LoggerFactory.getLogger(AisExpressionFilter.class);
+    private final static Logger LOG = LoggerFactory.getLogger(ExpressionFilter.class);
 
-    private final List<com.google.common.base.Predicate<AisTrack>> subFilters = Lists.newLinkedList();
+    private final BiPredicate<AISMessage, AISTrack> filter;
 
-    private final AisTracker tracker = new AisTracker();
+    private final AISTracker tracker = new AISTracker();
 
-    public AisExpressionFilter(String filterExpression) {
+    private ExpressionFilter() {
+        filter = null;
+    }
+
+    ExpressionFilter(String filterExpression) {
         // Create the lexer
         AisFilterLexer lexer = new AisFilterLexer(new ANTLRInputStream(filterExpression));
 
@@ -62,31 +59,33 @@ public class AisExpressionFilter implements Predicate<AISMessage> {
         AisFilterParser parser = new AisFilterParser(tokens);
 
         // Specify the entry point
-        FilterExpressionContext filterExpressionContext = parser.filterExpression();
-
-
+        // FilterExpressionContext filterExpressionContext = parser.filterExpression();
 
         // begin parsing at filterExpression rule
         ParseTree parseTree = parser.filterExpression();
 
-        new AisFilterBaseVisitor<>().visit(parseTree) ;
+        filter = new FilterExpressionVisitor().visit(parseTree);
 
-        // Attach listener and walk it
-        AisFilterExpressionListener listener = new AisFilterExpressionListener();
-
-        //AisFilterBaseVisitor aisFilterBaseVisitor = new AisFilterBaseVisitor();
-
-        ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(listener, filterExpressionContext);
+        if (filter == null)
+            throw new IllegalStateException("filter == null");
 
     }
+
+    /**
+     * Test an incoming aisMessage against the filter expression.
+     * The algorithm is stateful, so that previously detected positions
+     * for a given mmsi are remembered across messages.
+     *
+     * @param aisMessage
+     * @return true if the aisMessage satisfies the filter expression; false otherwise.
+     */
     @Override
     public boolean test(AISMessage aisMessage) {
+        AISTrack aisTrack = null;
         if (aisMessage instanceof DynamicDataReport || aisMessage instanceof StaticDataReport) {
             tracker.update(aisMessage);
-            AisTrack track = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
-            return Pr
+            aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
         }
-        return Predicates.and(subFilters).apply(aisMessage);
+        return filter.test(aisMessage, aisTrack);
     }
 }

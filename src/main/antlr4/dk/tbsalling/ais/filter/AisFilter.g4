@@ -2,16 +2,27 @@ grammar AisFilter;
 
 filter: filterExpression EOF;
 
-filterExpression:
-    |   MSGID compareTo INT
+filterExpression:           #root
+    |   MSGID compareToInt INT #msgid
     //|   MSGID (in|notin) (intRange|intList)
-      |   MMSI compareTo INT
+    |   MMSI compareToInt INT  #mmsi
     //|   MMSI (in|notin) (intRange|intList)
     //|   filterExpression (op=(AND|OR) filterExpression)+
     //|   '(' filterExpression ')'
+
+    |   left=filterExpression (op=AND right=filterExpression)+ # and
+   // |   '(' filterExpression ')'                    # parens
     ;
 
-compareTo : '!='|'='|'>'|'>='|'<='|'<' ;
+compareToInt : neq|eq|gt|gte|lte|lt ;
+
+neq : '!=';
+eq : '=';
+gt : '>';
+gte : '>=';
+lte : '<=';
+lt : '<';
+
 //in : '@'|'in'|'IN'|'=' ;
 //notin : '!@'|'not in'|'NOT IN'|'!=';
 
@@ -30,7 +41,7 @@ AND     : '&' ;
 INT     : '-'? [0-9]+;
 //FLOAT   : '-'? [0-9]* '.' [0-9]+ ;
 //STRING  : [a-zA-Z0-9_?\*]+ | '\'' .*? '\'' ;
-//WS      : [ \n\r\t]+ -> skip ; // toss out whitespace
+WS      : [ \n\r\t]+ -> skip ; // toss out whitespace
 
-//MSGID : 'id';
+MSGID : 'msgid';
 MMSI: 'mmsi';

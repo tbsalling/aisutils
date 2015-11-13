@@ -19,15 +19,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class AisTrackerTest {
+public class AISTrackerTest {
 
-    AisTracker tracker;
+    AISTracker tracker;
     InputStream inputStream;
     Instant wallclock = Instant.parse("2015-01-30T12:06:51.611Z");
 
     @Before
     public void setup() throws Exception {
-        tracker = new AisTracker();
+        tracker = new AISTracker();
         inputStream = Thread.currentThread().getContextClassLoader().getResource("ais-sample-1.nmea").openStream();
         processAISInputStream(inputStream, msg -> {
             try {
@@ -55,7 +55,7 @@ public class AisTrackerTest {
 
     @Test
     public void testGetAisTrack() throws Exception {
-        AisTrack track = tracker.getAisTrack(236037000);
+        AISTrack track = tracker.getAisTrack(236037000);
 
         assertNotNull(track.getStaticDataReport());
         assertNotNull(track.getDynamicDataReport());
@@ -75,7 +75,7 @@ public class AisTrackerTest {
 
     @Test
     public void testGetAisTracks() throws Exception {
-        Set<AisTrack> aisTracks = tracker.getAisTracks();
+        Set<AISTrack> aisTracks = tracker.getAisTracks();
         assertEquals(916, aisTracks.size());
 
         final boolean[] found = {false};

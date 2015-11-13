@@ -1,7 +1,7 @@
 package dk.tbsalling.ais.tracker.demo;
 
-import dk.tbsalling.ais.tracker.AisTrack;
-import dk.tbsalling.ais.tracker.AisTracker;
+import dk.tbsalling.ais.tracker.AISTrack;
+import dk.tbsalling.ais.tracker.AISTracker;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -13,19 +13,19 @@ public class SimpleDemoApp {
     public static void main(String [] args) throws IOException {
         InputStream inputStream = new ByteArrayInputStream(nmea.getBytes());
 
-        AisTracker tracker = new AisTracker();
+        AISTracker tracker = new AISTracker();
         tracker.update(inputStream);
 
         // Get stats from tracker
         System.out.println("No. of current tracks in tracker: " + tracker.getNumberOfAisTracks());
 
         // Get all tracks from tracker
-        Set<AisTrack> tracks = tracker.getAisTracks();
-        AisTrack aRandomTrack = tracks.iterator().next();
+        Set<AISTrack> tracks = tracker.getAisTracks();
+        AISTrack aRandomTrack = tracks.iterator().next();
         System.out.println("A random MMSI " + aRandomTrack.getMmsi());
 
         // Get a specific track from tracker
-        AisTrack track = tracker.getAisTrack(219997000);
+        AISTrack track = tracker.getAisTrack(219997000);
         System.out.println(
             "Tracking vessel with name: " + track.getShipName() +
             ", callsign: " + track.getCallsign() +

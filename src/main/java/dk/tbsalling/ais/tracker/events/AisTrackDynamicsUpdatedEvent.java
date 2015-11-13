@@ -1,6 +1,6 @@
 package dk.tbsalling.ais.tracker.events;
 
-import dk.tbsalling.ais.tracker.AisTrack;
+import dk.tbsalling.ais.tracker.AISTrack;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -10,7 +10,7 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public final class AisTrackDynamicsUpdatedEvent extends AisTrackEvent {
 
-    public AisTrackDynamicsUpdatedEvent(AisTrack aisTrack) {
+    public AisTrackDynamicsUpdatedEvent(AISTrack aisTrack) {
         super(aisTrack);
     }
 

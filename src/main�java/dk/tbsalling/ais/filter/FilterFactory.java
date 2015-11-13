@@ -7,14 +7,10 @@ import java.util.function.Predicate;
 /**
  * Created by tbsalling on 03/02/15.
  */
-public class AisFilters {
+public final class FilterFactory {
 
-    Predicate<AISMessage> expressionFilter = {
-
-        @Override
-        public boolean test(AISMessage aisMessage) {
-            return false;
-        }
+    public static Predicate<AISMessage> newExpressionFilter(String expression) {
+        return new ExpressionFilter(expression);
     }
 
 }

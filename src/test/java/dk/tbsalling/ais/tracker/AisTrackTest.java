@@ -19,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
-public class AisTrackTest {
+public class AISTrackTest {
 
     static ShipAndVoyageData staticAisMessageMMSI211339980;
     static PositionReport dynamicAisMessageMMSI576048000;
@@ -27,7 +27,7 @@ public class AisTrackTest {
     static ShipAndVoyageData staticAisMessageMMSI367524080;
     static PositionReport dynamicAisMessageMMSI367524080;
 
-    AisTrack track;
+    AISTrack track;
     Instant now;
     
     @BeforeClass
@@ -41,48 +41,48 @@ public class AisTrackTest {
     @Before
     public void createTrack() {
         now = Instant.now();
-        track = new AisTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, now, now);
+        track = new AISTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, now, now);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor1() throws Exception {
-        new AisTrack(null, null, null, null);
+        new AISTrack(null, null, null, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testConstructorStaticTimestampMustBeProvided() throws Exception {
-        new AisTrack(staticAisMessageMMSI211339980, null);
+        new AISTrack(staticAisMessageMMSI211339980, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructorStaticTimestampMustBeProvided2() throws Exception {
-        new AisTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, null, now);
+        new AISTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, null, now);
     }
 
     @Test(expected = NullPointerException.class)
     public void testConstructorDynamicTimestampMustBeProvided() throws Exception {
-        new AisTrack(dynamicAisMessageMMSI367524080, null);
+        new AISTrack(dynamicAisMessageMMSI367524080, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructorDynamicTimestampMustBeProvided2() throws Exception {
-        new AisTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, now, null);
+        new AISTrack(staticAisMessageMMSI367524080, dynamicAisMessageMMSI367524080, now, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor2() throws Exception {
-        new AisTrack(staticAisMessageMMSI211339980, dynamicAisMessageMMSI367524080, now, now);
+        new AISTrack(staticAisMessageMMSI211339980, dynamicAisMessageMMSI367524080, now, now);
     }
 
     @Test
     public void testConstructor3() throws Exception {
-        new AisTrack(staticAisMessageMMSI367524080, null, now, null);
-        new AisTrack(null, dynamicAisMessageMMSI367524080, null, now);
+        new AISTrack(staticAisMessageMMSI367524080, null, now, null);
+        new AISTrack(null, dynamicAisMessageMMSI367524080, null, now);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor4() throws Exception {
-        new AisTrack(null, dynamicAisMessageMMSI367524080, now, now);
+        new AISTrack(null, dynamicAisMessageMMSI367524080, now, now);
     }
 
     @Test
@@ -179,33 +179,33 @@ public class AisTrackTest {
     public void testDynamicHistory() throws Exception {
 
         now = Instant.parse("2015-01-30T17:00:00.000Z");
-        AisTrack track = new AisTrack((ShipAndVoyageData) AISMessage.create(NMEAMessage.fromString("!AIVDM,2,1,7,A,53AkSB02=:9TuaaR2210uDj0htELDptE8r22221J40=5562kN81TQA1DRBlj,0*1D"), NMEAMessage.fromString("!AIVDM,2,2,7,A,0ES`8888880,2*65")), now);
+        AISTrack track = new AISTrack((ShipAndVoyageData) AISMessage.create(NMEAMessage.fromString("!AIVDM,2,1,7,A,53AkSB02=:9TuaaR2210uDj0htELDptE8r22221J40=5562kN81TQA1DRBlj,0*1D"), NMEAMessage.fromString("!AIVDM,2,2,7,A,0ES`8888880,2*65")), now);
 
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(0, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AisTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B")), now);
+        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(0, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AisTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B")), now);
+        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(1, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AisTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00")), now);
+        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(2, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AisTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E")), now);
+        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(3, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AisTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59")), now);
+        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(4, track.getDynamicDataHistory().size());
 

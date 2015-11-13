@@ -1,6 +1,6 @@
 package dk.tbsalling.ais.tracker.events;
 
-import dk.tbsalling.ais.tracker.AisTrack;
+import dk.tbsalling.ais.tracker.AISTrack;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -12,7 +12,7 @@ import static java.util.Objects.requireNonNull;
 @Immutable
 public abstract class AisTrackEvent {
 
-    public AisTrackEvent(AisTrack aisTrack) {
+    public AisTrackEvent(AISTrack aisTrack) {
         requireNonNull(aisTrack);
         this.aisTrack = aisTrack;
     }
@@ -21,7 +21,7 @@ public abstract class AisTrackEvent {
         return aisTrack.getMmsi();
     }
 
-    public AisTrack getAisTrack() {
+    public AISTrack getAisTrack() {
         return aisTrack;
     }
 
@@ -32,6 +32,6 @@ public abstract class AisTrackEvent {
                 '}';
     }
 
-    private AisTrack aisTrack;
+    private AISTrack aisTrack;
 
 }

@@ -61,11 +61,11 @@ import static java.util.Objects.requireNonNull;
  * later on.
  */
 @ThreadSafe
-public class AisTracker implements TrackEventEmitter {
+public class AISTracker implements TrackEventEmitter {
 
-    private final static Logger LOG = LoggerFactory.getLogger(AisTracker.class);
+    private final static Logger LOG = LoggerFactory.getLogger(AISTracker.class);
 
-    public AisTracker() {
+    public AISTracker() {
         LOG.info("AisTracker created.");
         shutdown = false;
     }
@@ -139,7 +139,7 @@ public class AisTracker implements TrackEventEmitter {
      * @param mmsi the mmsi no. to lookup.
      * @return The tracked AisTrack or null if no such track is currently tracked.
      */
-    public AisTrack getAisTrack(long mmsi) {
+    public AISTrack getAisTrack(long mmsi) {
         return threadSafeGet(() -> tracks.get(mmsi));
     }
 
@@ -147,7 +147,7 @@ public class AisTracker implements TrackEventEmitter {
      * Extract an immutable copy of all tracks currently tracked.
      * @return An immutable set of all tracks currently tracked.
      */
-    public Set<AisTrack> getAisTracks() {
+    public Set<AISTrack> getAisTracks() {
         return threadSafeGet(() -> ImmutableSet.copyOf(tracks.values()));
     }
 
@@ -229,36 +229,36 @@ public class AisTracker implements TrackEventEmitter {
 
     private void insertAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         /* Assumes lock is locked */
-        final AisTrack aisTrack = new AisTrack(shipStaticDataReport, msgTimestamp);
+        final AISTrack aisTrack = new AISTrack(shipStaticDataReport, msgTimestamp);
         tracks.put(mmsi, aisTrack);
         fireTrackCreated(aisTrack);
     }
 
     private void insertAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         /* Assumes lock is locked */
-        final AisTrack aisTrack = new AisTrack(basicShipDynamicDataReport, msgTimestamp);
+        final AISTrack aisTrack = new AISTrack(basicShipDynamicDataReport, msgTimestamp);
         tracks.put(mmsi, aisTrack);
         fireTrackCreated(aisTrack);
     }
 
     private void updateAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         /* Assumes lock is locked */
-        AisTrack oldTrack = tracks.get(mmsi);
+        AISTrack oldTrack = tracks.get(mmsi);
         if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
             throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfStaticUpdate());
 
-        AisTrack newTrack = new AisTrack(shipStaticDataReport, oldTrack.getDynamicDataReport(), msgTimestamp, oldTrack.getTimeOfDynamicUpdate());
+        AISTrack newTrack = new AISTrack(shipStaticDataReport, oldTrack.getDynamicDataReport(), msgTimestamp, oldTrack.getTimeOfDynamicUpdate());
         tracks.put(mmsi, newTrack);
         fireTrackUpdated(newTrack);
     }
 
     private void updateAisTrack(final long mmsi, final DynamicDataReport basicShipDynamicDataReport, final Instant msgTimestamp) {
         /* Assumes lock is locked */
-        AisTrack oldTrack = tracks.get(mmsi);
+        AISTrack oldTrack = tracks.get(mmsi);
         if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
             throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfDynamicUpdate());
 
-        AisTrack newTrack = new AisTrack(oldTrack.getStaticDataReport(), basicShipDynamicDataReport, oldTrack.getTimeOfStaticUpdate(), msgTimestamp);
+        AISTrack newTrack = new AISTrack(oldTrack.getStaticDataReport(), basicShipDynamicDataReport, oldTrack.getTimeOfStaticUpdate(), msgTimestamp);
         tracks.put(mmsi, newTrack);
         fireTrackUpdated(newTrack);
         fireTrackDynamicsUpdated(newTrack);
@@ -275,7 +275,7 @@ public class AisTracker implements TrackEventEmitter {
     private boolean shutdown = false;
 
     @GuardedBy("lock")
-    private Map<Long, AisTrack> tracks = new HashMap<>();
+    private Map<Long, AISTrack> tracks = new HashMap<>();
 
     /** To inject special executors for unit testing */
     void setTaskExecutor(ExecutorService taskExecutor) {
@@ -311,10 +311,10 @@ public class AisTracker implements TrackEventEmitter {
     private void processTrackHistory() {
         lock.lock();
         try {
-            Map<Long, AisTrack> prunedTracks = Maps.newTreeMap();
+            Map<Long, AISTrack> prunedTracks = Maps.newTreeMap();
             tracks.forEach((mmsi, track) -> {
                 if (TRACK_NEEDS_PRUNING.test(track)) {
-                    prunedTracks.put(track.getMmsi(), new AisTrack(track, INSTANT_IMPLIES_PRUNING));
+                    prunedTracks.put(track.getMmsi(), new AISTrack(track, INSTANT_IMPLIES_PRUNING));
                 }
             });
             prunedTracks.forEach((mmsi, track) -> tracks.put(mmsi, prunedTracks.get(mmsi)));
@@ -343,7 +343,7 @@ public class AisTracker implements TrackEventEmitter {
     private final Predicate<Instant> INSTANT_IMPLIES_PRUNING  = instant -> instant.isBefore(wallclock.minus(DYNAMIC_DATA_HISTORY_MAX_AGE));
 
     /** Predicate for tracks which need pruning of their dynamic history */
-    private final Predicate<AisTrack> TRACK_NEEDS_PRUNING = aisTrack -> !aisTrack.getDynamicDataHistory().isEmpty() && INSTANT_IMPLIES_PRUNING.test(aisTrack.getDynamicDataHistory().firstKey());
+    private final Predicate<AISTrack> TRACK_NEEDS_PRUNING = aisTrack -> !aisTrack.getDynamicDataHistory().isEmpty() && INSTANT_IMPLIES_PRUNING.test(aisTrack.getDynamicDataHistory().firstKey());
 
     //
     // Fields and methods related to track stale check
@@ -353,7 +353,7 @@ public class AisTracker implements TrackEventEmitter {
     private void processStaleTracks() {
         lock.lock();
         try {
-            Map<Long, AisTrack> staleTracks = Maps.newTreeMap();
+            Map<Long, AISTrack> staleTracks = Maps.newTreeMap();
             tracks.forEach((mmsi, track) -> {
                 if (track.getTimeOfLastUpdate().isBefore(wallclock.minus(STALE_PERIOD))) {
                     staleTracks.put(mmsi, track);
@@ -416,19 +416,19 @@ public class AisTracker implements TrackEventEmitter {
         LOG.info("Subscribed to tracker events: " + subscriber);
     }
 
-    private void fireTrackCreated(AisTrack track) {
+    private void fireTrackCreated(AISTrack track) {
         eventBus.post(new AisTrackCreatedEvent(track));
     }
 
-    private void fireTrackUpdated(AisTrack track) {
+    private void fireTrackUpdated(AISTrack track) {
         eventBus.post(new AisTrackUpdatedEvent(track));
     }
 
-    private void fireTrackDynamicsUpdated(AisTrack track) {
+    private void fireTrackDynamicsUpdated(AISTrack track) {
         eventBus.post(new AisTrackDynamicsUpdatedEvent(track));
     }
 
-    private void fireTrackDeleted(AisTrack track) {
+    private void fireTrackDeleted(AISTrack track) {
         eventBus.post(new AisTrackDeletedEvent(track));
     }
 

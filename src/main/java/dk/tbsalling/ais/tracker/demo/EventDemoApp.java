@@ -1,7 +1,7 @@
 package dk.tbsalling.ais.tracker.demo;
 
 import com.google.common.eventbus.Subscribe;
-import dk.tbsalling.ais.tracker.AisTracker;
+import dk.tbsalling.ais.tracker.AISTracker;
 import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
@@ -15,7 +15,7 @@ public class EventDemoApp {
     public static void main(String [] args) throws IOException, InterruptedException {
 
         // Create the tracker
-        AisTracker tracker = new AisTracker();
+        AISTracker tracker = new AISTracker();
 
         // Register event listeners
         tracker.registerSubscriber(new Object() {
