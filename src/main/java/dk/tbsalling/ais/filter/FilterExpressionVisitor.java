@@ -112,7 +112,7 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
 
     private  Predicate<AISMessage> createCompareToDouble(String fieldName, ToDoubleFunction<AISMessage> lhs, AisFilterParser.CompareToContext compareToOperator, double rhs) {
         if (compareToOperator.eq() != null)
-            return aisMessage -> isFieldRelevantForMessage(fieldName, aisMessage) ? lhs.applyAsDouble(aisMessage) == rhs : true;
+            return aisMessage -> isFieldRelevantForMessage(fieldName, aisMessage) ? Math.abs(lhs.applyAsDouble(aisMessage) - rhs) < 10e-6 : true;
         else if (compareToOperator.neq() != null)
             return aisMessage -> isFieldRelevantForMessage(fieldName, aisMessage) ?lhs.applyAsDouble(aisMessage) != rhs : true;
         else if (compareToOperator.lt() != null)

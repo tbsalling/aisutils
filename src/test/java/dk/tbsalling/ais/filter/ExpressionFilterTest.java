@@ -74,6 +74,7 @@ public class ExpressionFilterTest {
     //
     // Test SOG
     //
+
     @Test
     public void testSogGreaterThan() throws Exception {
         final AISTracker tracker = new AISTracker();
@@ -109,6 +110,46 @@ public class ExpressionFilterTest {
                 if (sog == null)
                     sog = 0.0f;
                 return sog > 5.9;
+            } else
+                return true;
+        });
+    }
+
+    @Test
+    public void testSogGreaterThanOrEquals() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("sog>=6.0", msg -> { // triggers visitSog
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return ((DynamicDataReport) msg).getSpeedOverGround() >= 6.0;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float sog = track.getSpeedOverGround();
+                if (sog == null)
+                    sog = 0.0f;
+                return sog > 6.0;
+            } else
+                return true;
+        });
+    }
+
+    @Test
+    public void testSogEquals() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("sog=10.1", msg -> { // triggers visitSog
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return Math.abs(((DynamicDataReport) msg).getSpeedOverGround() - 10.1f) < 1e-6;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float sog = track.getSpeedOverGround();
+                if (sog == null)
+                    sog = 0.0f;
+                return Math.abs(sog - 10.1f) < 1e-6;
             } else
                 return true;
         });

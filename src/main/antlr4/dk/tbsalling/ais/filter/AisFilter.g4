@@ -3,17 +3,19 @@ grammar AisFilter;
 filter: filterExpression EOF;
 
 filterExpression:           #root
-    |   MSGID compareToInt INT #msgid
+    |   MSGID compareTo INT #msgid
     //|   MSGID (in|notin) (intRange|intList)
-    |   MMSI compareToInt INT  #mmsi
+    |   MMSI compareTo INT  #mmsi
+    |   SOG compareTo FLOAT #sog
+
     //|   MMSI (in|notin) (intRange|intList)
     //|   '(' filterExpression ')'
 
-    |   left=filterExpression (op=(AND|OR) right=filterExpression)+ # and
+    |   left=filterExpression (op=(AND|OR) right=filterExpression)+ # andOr
    // |   '(' filterExpression ')'                    # parens
     ;
 
-compareToInt : neq|eq|gt|gte|lte|lt ;
+compareTo : neq|eq|gt|gte|lte|lt ;
 
 neq : '!=';
 eq : '=';
@@ -38,9 +40,10 @@ AND     : '&' | 'and' ;
 OR      : '|' | 'or';
 //RANGE   : '..';
 INT     : '-'? [0-9]+;
-//FLOAT   : '-'? [0-9]* '.' [0-9]+ ;
+FLOAT   : '-'? [0-9]* '.' [0-9]+ ;
 //STRING  : [a-zA-Z0-9_?\*]+ | '\'' .*? '\'' ;
 WS      : [ \n\r\t]+ -> skip ; // toss out whitespace
 
 MSGID : 'msgid';
 MMSI: 'mmsi';
+SOG: 'sog';
