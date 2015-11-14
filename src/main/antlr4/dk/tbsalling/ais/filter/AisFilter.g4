@@ -4,11 +4,12 @@ filter: filterExpression EOF;
 
 filterExpression:                     #root
     | MSGID compareTo INT             #msgid
-    //|   MSGID (in|notin) intList #mmsiInList
     | MMSI compareTo INT              #mmsi
+    | MSGID (in|notin) intList        #msgidInList
+    | MMSI (in|notin) intList         #mmsiInList
     | (SOG|COG) compareTo (INT|FLOAT) #sogCog
     | (LAT|LNG) compareTo FLOAT       #latLng
-    |   left=filterExpression (op=(AND|OR) right=filterExpression)+ # andOr
+    |  left=filterExpression (op=(AND|OR) right=filterExpression)+ # andOr
     ;
 
 compareTo : neq|eq|gt|gte|lte|lt ;
@@ -20,21 +21,15 @@ gte : '>=';
 lte : '<=';
 lt : '<';
 
-//in : '@'|'in'|'IN'|'=' ;
-//notin : '!@'|'not in'|'NOT IN'|'!=';
+in : 'in'|'IN' ;
+notin : 'not in'|'NOT IN';
 
-//intList  : '('? INT (',' INT)* ')'? ;
-//stringList : '('? string (',' string)* ')'? ;
-
-//intRange : '('? INT RANGE INT ')'? ;
-//numberRange : '('? number RANGE number ')'? ;
+intList  : '('? INT (',' INT)* ')'? ;
 
 //number : INT|FLOAT;
-//string : number|STRING;
 
 AND     : '&' | 'and' ;
 OR      : '|' | 'or';
-//RANGE   : '..';
 INT     : '-'? [0-9]+;
 FLOAT   : '-'? [0-9]* '.' [0-9]+ ;
 //STRING  : [a-zA-Z0-9_?\*]+ | '\'' .*? '\'' ;

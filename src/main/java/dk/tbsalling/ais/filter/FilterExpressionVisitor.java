@@ -1,13 +1,17 @@
 package dk.tbsalling.ais.filter;
 
+import com.google.common.collect.Lists;
 import dk.tbsalling.ais.tracker.AISTrack;
 import dk.tbsalling.ais.tracker.AISTracker;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
+import org.antlr.v4.runtime.tree.TerminalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
@@ -42,11 +46,29 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
     }
 
     @Override
+    public Predicate<AISMessage> visitMsgidInList(AisFilterParser.MsgidInListContext ctx) {
+        ArrayList<Integer> msgIDList = Lists.newArrayList();
+        List<TerminalNode> msgIds = ctx.intList().INT();
+        msgIds.forEach(msgId -> msgIDList.add(Integer.valueOf(msgId.getText())));
+
+        return ctx.in() != null ? msg -> msgIDList.contains(msg.getMessageType().getCode()) : msg -> !msgIDList.contains(msg.getMessageType().getCode());
+    }
+
+    @Override
     public Predicate<AISMessage> visitMmsi(AisFilterParser.MmsiContext ctx)  {
         ToIntFunction<AISMessage> lhs = aisMessage -> aisMessage.getSourceMmsi().getMMSI().intValue();
         AisFilterParser.CompareToContext compareToOperator = ctx.compareTo();
         int mmsi = Integer.valueOf(ctx.INT().getText());
         return createCompareToInt(null, lhs, compareToOperator, mmsi);
+    }
+
+    @Override
+    public Predicate<AISMessage> visitMmsiInList(AisFilterParser.MmsiInListContext ctx) {
+        ArrayList<Long> mmsiList = Lists.newArrayList();
+        List<TerminalNode> mmsis = ctx.intList().INT();
+        mmsis.forEach(mmsi -> mmsiList.add(Long.valueOf(mmsi.getText())));
+
+        return ctx.in() != null ? msg -> mmsiList.contains(msg.getSourceMmsi().getMMSI()) : msg -> !mmsiList.contains(msg.getSourceMmsi().getMMSI());
     }
 
     @Override

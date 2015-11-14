@@ -1,5 +1,6 @@
 package dk.tbsalling.ais.filter;
 
+import com.google.common.collect.Lists;
 import dk.tbsalling.ais.tracker.AISTrack;
 import dk.tbsalling.ais.tracker.AISTracker;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
@@ -22,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 public class ExpressionFilterTest {
 
     //
+    // Test MSGID
     // Test eq, neq, lt, lte, gt, gte
     //
 
@@ -56,6 +58,21 @@ public class ExpressionFilterTest {
     }
 
     //
+    // Test MSGID list
+    //
+
+    @Test
+    public void testMsgIdInList() throws Exception {
+        verifyExpressionFilter("msgid in (1, 2, 3, 5)", msg -> Lists.newArrayList(1, 2, 3, 5).contains(msg.getMessageType().getCode()));
+    }
+
+    @Test
+    public void testMsgIdNotInList() throws Exception {
+        verifyExpressionFilter("msgid not in (1, 2, 3, 5)", msg -> ! Lists.newArrayList(1, 2, 3, 5).contains(msg.getMessageType().getCode()));
+    }
+
+    //
+    // Test MMSI
     // Test and/or operator
     //
 
@@ -67,6 +84,20 @@ public class ExpressionFilterTest {
     @Test
     public void testMsgIdEqualsAndMmsiEquals() throws Exception {
         verifyExpressionFilter("msgid=1 and mmsi=227006760", msg -> msg.getMessageType().getCode() == 1 && msg.getSourceMmsi().getMMSI() == 227006760);
+    }
+
+    //
+    // Test MMSI list
+    //
+
+    @Test
+    public void testMmsiIdInList() throws Exception {
+        verifyExpressionFilter("mmsi in (258009500, 257287000, 2734450)", msg -> Lists.newArrayList(258009500L, 257287000L, 2734450L).contains(msg.getSourceMmsi().getMMSI()));
+    }
+
+    @Test
+    public void testMmsiIdNotInList() throws Exception {
+        verifyExpressionFilter("mmsi not in (258009500, 257287000, 2734450)", msg -> ! Lists.newArrayList(258009500L, 257287000L, 2734450L).contains(msg.getSourceMmsi().getMMSI()));
     }
 
     //
@@ -266,7 +297,6 @@ public class ExpressionFilterTest {
                 return true;
         });
     }
-
 
     //
     // Internal methods
