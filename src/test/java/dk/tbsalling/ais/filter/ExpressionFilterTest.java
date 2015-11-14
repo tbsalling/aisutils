@@ -198,6 +198,77 @@ public class ExpressionFilterTest {
     }
 
     //
+    // Test LAT / LNG
+    //
+
+    @Test
+    public void testLatGreaterThanAndLessThan() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("lat>55.0 and lat<55.5", msg -> { // triggers visitAndOr
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return ((DynamicDataReport) msg).getLatitude() > 55.0 && ((DynamicDataReport) msg).getLatitude() < 55.5;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float lat = track.getLatitude();
+                if (lat == null)
+                    lat = 0.0f;
+                return lat > 55.0 && lat < 55.5;
+            } else
+                return true;
+        });
+    }
+
+    @Test
+    public void testLngGreaterThanAndLessThan() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("lng>10.0 and lng<11.0", msg -> { // triggers visitAndOr
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return ((DynamicDataReport) msg).getLongitude() > 10.0 && ((DynamicDataReport) msg).getLongitude() < 11.0;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float lng = track.getLongitude();
+                if (lng == null)
+                    lng = 0.0f;
+                return lng > 10.0 && lng < 11.0;
+            } else
+                return true;
+        });
+    }
+
+    @Test
+    public void testLatAndLngGreaterThanAndLessThan() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("lat>58.8 and lat<59.0 and lng>5.0 and lng<6.0", msg -> { // triggers visitAndOr
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return  ((DynamicDataReport) msg).getLatitude() > 58.8 &&
+                        ((DynamicDataReport) msg).getLatitude() < 59.0 &&
+                        ((DynamicDataReport) msg).getLongitude() > 5.0 &&
+                        ((DynamicDataReport) msg).getLongitude() < 6.0;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float lat = track.getLatitude();
+                Float lng = track.getLongitude();
+                if (lat == null)
+                    lat = 0.0f;
+                if (lng == null)
+                    lng = 0.0f;
+                return lat > 58.8 && lat < 59.0 && lng > 5.0 && lng < 6.0;
+            } else
+                return true;
+        });
+    }
+
+
+    //
     // Internal methods
     //
 

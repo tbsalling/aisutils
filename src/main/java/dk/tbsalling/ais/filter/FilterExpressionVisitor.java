@@ -71,7 +71,7 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
                         value = aisTrack.getCourseOverGround();
                     return value == null ? 0.0f : value;     // Assume sog|cog=0.0 if not known
                 } else {
-                    LOG.warn("This is not relevant for SOG. Check program design. ctx = " + ctx.toString());
+                    LOG.warn("This is not relevant for SOG/COG. Check program design. ctx = " + ctx.toString());
                     return 0.0; // Assume sog=0.0 message is not relevant for sog / should never happen
                 }
             };
@@ -96,7 +96,7 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
                         value = aisTrack.getCourseOverGround() == null ? 0 : aisTrack.getCourseOverGround().intValue();
                     return value;     // Assume sog|cog=0.0 if not known
                 } else {
-                    LOG.warn("This is not relevant for SOG. Check program design. ctx = " + ctx.toString());
+                    LOG.warn("This is not relevant for SOG/COG. Check program design. ctx = " + ctx.toString());
                     return 0; // Assume 0 message is not relevant for sog / should never happen
                 }
             };
@@ -104,6 +104,39 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
             int rhs = Integer.valueOf(ctx.INT().getText());
             return createCompareToInt(fieldName, lhs, compareToOperator, rhs);
         }
+    }
+
+    @Override
+    public Predicate<AISMessage> visitLatLng(AisFilterParser.LatLngContext ctx) {
+        String fieldName = ctx.getChild(0).getText();
+
+        ToDoubleFunction<AISMessage> lhs = aisMessage -> {
+            if (aisMessage instanceof DynamicDataReport) {
+                tracker.update(aisMessage);
+                if (ctx.LAT() != null)
+                    return ((DynamicDataReport) aisMessage).getLatitude();
+                else
+                    return ((DynamicDataReport) aisMessage).getLongitude();
+            } else if (aisMessage instanceof StaticDataReport) {
+                tracker.update(aisMessage);
+                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
+                Float value ;
+                if (ctx.LAT() != null)
+                    value = aisTrack.getLatitude();
+                else
+                    value = aisTrack.getLongitude();
+                return value == null ? 0.0f : value;     // Assume lat|lng=0.0 if not known
+            } else {
+                LOG.warn("This is not relevant for LAT/LNG. Check program design. ctx = " + ctx.toString());
+                return 0.0; // Assume sog=0.0 message is not relevant for sog / should never happen
+            }
+        };
+
+        AisFilterParser.CompareToContext compareToOperator = ctx.compareTo();
+
+        double rhs = Double.valueOf(ctx.FLOAT().getText());
+
+        return createCompareToDouble(fieldName, lhs, compareToOperator, rhs);
     }
 
     private Predicate<AISMessage> computePredicate(AisFilterParser.FilterExpressionContext ctx) {
@@ -123,6 +156,10 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
         if ("sog".equalsIgnoreCase(field))
             return msg instanceof DynamicDataReport || msg instanceof StaticDataReport;
         if ("cog".equalsIgnoreCase(field))
+            return msg instanceof DynamicDataReport || msg instanceof StaticDataReport;
+        if ("lat".equalsIgnoreCase(field))
+            return msg instanceof DynamicDataReport || msg instanceof StaticDataReport;
+        if ("lng".equalsIgnoreCase(field))
             return msg instanceof DynamicDataReport || msg instanceof StaticDataReport;
         return true;
     }

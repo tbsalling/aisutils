@@ -2,17 +2,13 @@ grammar AisFilter;
 
 filter: filterExpression EOF;
 
-filterExpression:           #root
-    | MSGID compareTo INT #msgid
-    //|   MSGID (in|notin) (intRange|intList)
-    | MMSI compareTo INT  #mmsi
+filterExpression:                     #root
+    | MSGID compareTo INT             #msgid
+    //|   MSGID (in|notin) intList #mmsiInList
+    | MMSI compareTo INT              #mmsi
     | (SOG|COG) compareTo (INT|FLOAT) #sogCog
-
-    //|   MMSI (in|notin) (intRange|intList)
-    //|   '(' filterExpression ')'
-
+    | (LAT|LNG) compareTo FLOAT       #latLng
     |   left=filterExpression (op=(AND|OR) right=filterExpression)+ # andOr
-   // |   '(' filterExpression ')'                    # parens
     ;
 
 compareTo : neq|eq|gt|gte|lte|lt ;
@@ -48,3 +44,5 @@ MSGID : 'msgid';
 MMSI: 'mmsi';
 SOG: 'sog';
 COG: 'cog';
+LAT: 'lat';
+LNG: 'lng';
