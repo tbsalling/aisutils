@@ -8,6 +8,7 @@ import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
@@ -54,52 +55,40 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
         AisFilterParser.CompareToContext compareToOperator = ctx.compareTo();
 
         if (ctx.FLOAT() != null) {
-            ToDoubleFunction<AISMessage> lhs = aisMessage -> {
-                if (aisMessage instanceof DynamicDataReport) {
-                    tracker.update(aisMessage);
+            ToDoubleFunction<AISMessage> lhs = extractDoubleFromAisMessageOrAisTrack(
+                aisMessage -> {
                     if (ctx.SOG() != null)
-                        return ((DynamicDataReport) aisMessage).getSpeedOverGround();
+                        return Double.valueOf(((DynamicDataReport) aisMessage).getSpeedOverGround());
                     else
-                        return ((DynamicDataReport) aisMessage).getCourseOverGround();
-                } else if (aisMessage instanceof StaticDataReport) {
-                    tracker.update(aisMessage);
-                    AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
-                    Float value ;
+                        return Double.valueOf(((DynamicDataReport) aisMessage).getCourseOverGround());
+                },
+                aisTrack -> {
+                    Float value;
                     if (ctx.SOG() != null)
                         value = aisTrack.getSpeedOverGround();
                     else
                         value = aisTrack.getCourseOverGround();
-                    return value == null ? 0.0f : value;     // Assume sog|cog=0.0 if not known
-                } else {
-                    LOG.warn("This is not relevant for SOG/COG. Check program design. ctx = " + ctx.toString());
-                    return 0.0; // Assume sog=0.0 message is not relevant for sog / should never happen
+                    return value == null ? 0.0d : Double.valueOf(value); // Assume 0.0 if not known
                 }
-            };
+            );
 
             double rhs = Double.valueOf(ctx.FLOAT().getText());
             return createCompareToDouble(fieldName, lhs, compareToOperator, rhs);
         } else {
-            ToIntFunction<AISMessage> lhs = aisMessage -> {
-                if (aisMessage instanceof DynamicDataReport) {
-                    tracker.update(aisMessage);
+            ToIntFunction<AISMessage> lhs = extractIntFromAisMessageOrAisTrack(
+                aisMessage -> {
                     if (ctx.SOG() != null)
                         return ((DynamicDataReport) aisMessage).getSpeedOverGround().intValue();
                     else
                         return ((DynamicDataReport) aisMessage).getCourseOverGround().intValue();
-                } else if (aisMessage instanceof StaticDataReport) {
-                    tracker.update(aisMessage);
-                    AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
-                    int value ;
+                },
+                aisTrack -> {
                     if (ctx.SOG() != null)
-                        value = aisTrack.getSpeedOverGround() == null ? 0 : aisTrack.getSpeedOverGround().intValue();
+                        return aisTrack.getSpeedOverGround() == null ? 0 : aisTrack.getSpeedOverGround().intValue();
                     else
-                        value = aisTrack.getCourseOverGround() == null ? 0 : aisTrack.getCourseOverGround().intValue();
-                    return value;     // Assume sog|cog=0.0 if not known
-                } else {
-                    LOG.warn("This is not relevant for SOG/COG. Check program design. ctx = " + ctx.toString());
-                    return 0; // Assume 0 message is not relevant for sog / should never happen
+                        return aisTrack.getCourseOverGround() == null ? 0 : aisTrack.getCourseOverGround().intValue();
                 }
-            };
+            );
 
             int rhs = Integer.valueOf(ctx.INT().getText());
             return createCompareToInt(fieldName, lhs, compareToOperator, rhs);
@@ -110,33 +99,60 @@ public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISM
     public Predicate<AISMessage> visitLatLng(AisFilterParser.LatLngContext ctx) {
         String fieldName = ctx.getChild(0).getText();
 
-        ToDoubleFunction<AISMessage> lhs = aisMessage -> {
-            if (aisMessage instanceof DynamicDataReport) {
-                tracker.update(aisMessage);
+        ToDoubleFunction<AISMessage> lhs = extractDoubleFromAisMessageOrAisTrack(
+            aisMessage -> {
                 if (ctx.LAT() != null)
-                    return ((DynamicDataReport) aisMessage).getLatitude();
+                    return Double.valueOf(((DynamicDataReport) aisMessage).getLatitude());
                 else
-                    return ((DynamicDataReport) aisMessage).getLongitude();
-            } else if (aisMessage instanceof StaticDataReport) {
-                tracker.update(aisMessage);
-                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
-                Float value ;
+                    return Double.valueOf(((DynamicDataReport) aisMessage).getLongitude());
+            },
+            aisTrack -> {
+                Float value;
                 if (ctx.LAT() != null)
                     value = aisTrack.getLatitude();
                 else
                     value = aisTrack.getLongitude();
-                return value == null ? 0.0f : value;     // Assume lat|lng=0.0 if not known
-            } else {
-                LOG.warn("This is not relevant for LAT/LNG. Check program design. ctx = " + ctx.toString());
-                return 0.0; // Assume sog=0.0 message is not relevant for sog / should never happen
+                return value == null ? 0.0d : Double.valueOf(value); // Assume 0.0 if not known
             }
-        };
+        );
 
         AisFilterParser.CompareToContext compareToOperator = ctx.compareTo();
 
         double rhs = Double.valueOf(ctx.FLOAT().getText());
 
         return createCompareToDouble(fieldName, lhs, compareToOperator, rhs);
+    }
+
+    private ToIntFunction<AISMessage> extractIntFromAisMessageOrAisTrack(Function<AISMessage, Integer> extractIntFromAisMessage, Function<AISTrack, Integer> extractIntFromAisTrack) {
+        return aisMessage -> {
+            if (aisMessage instanceof DynamicDataReport) {
+                tracker.update(aisMessage);
+                return extractIntFromAisMessage.apply(aisMessage);
+            } else if (aisMessage instanceof StaticDataReport) {
+                tracker.update(aisMessage);
+                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
+                return extractIntFromAisTrack.apply(aisTrack);
+            } else {
+                LOG.warn("This is not relevant. Check program design.");
+                return 0; // Assume 0 message is not relevant / should never happen
+            }
+        };
+    }
+
+    private ToDoubleFunction<AISMessage> extractDoubleFromAisMessageOrAisTrack(Function<AISMessage, Double> extractDoubleFromAisMessage, Function<AISTrack, Double> extractDoubleFromAisTrack) {
+        return aisMessage -> {
+            if (aisMessage instanceof DynamicDataReport) {
+                tracker.update(aisMessage);
+                return extractDoubleFromAisMessage.apply(aisMessage);
+            } else if (aisMessage instanceof StaticDataReport) {
+                tracker.update(aisMessage);
+                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
+                return extractDoubleFromAisTrack.apply(aisTrack);
+            } else {
+                LOG.warn("This is not relevant for LAT/LNG. Check program design.");
+                return 0.0; // Assume sog=0.0 message is not relevant for sog / should never happen
+            }
+        };
     }
 
     private Predicate<AISMessage> computePredicate(AisFilterParser.FilterExpressionContext ctx) {
