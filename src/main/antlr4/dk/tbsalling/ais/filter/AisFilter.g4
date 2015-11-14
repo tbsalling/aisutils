@@ -3,10 +3,10 @@ grammar AisFilter;
 filter: filterExpression EOF;
 
 filterExpression:           #root
-    |   MSGID compareTo INT #msgid
+    | MSGID compareTo INT #msgid
     //|   MSGID (in|notin) (intRange|intList)
-    |   MMSI compareTo INT  #mmsi
-    |   SOG compareTo FLOAT #sog
+    | MMSI compareTo INT  #mmsi
+    | (SOG|COG) compareTo (INT|FLOAT) #sogCog
 
     //|   MMSI (in|notin) (intRange|intList)
     //|   '(' filterExpression ')'
@@ -47,3 +47,4 @@ WS      : [ \n\r\t]+ -> skip ; // toss out whitespace
 MSGID : 'msgid';
 MMSI: 'mmsi';
 SOG: 'sog';
+COG: 'cog';

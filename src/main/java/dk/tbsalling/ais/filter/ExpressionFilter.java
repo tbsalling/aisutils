@@ -16,11 +16,7 @@
 
 package dk.tbsalling.ais.filter;
 
-import dk.tbsalling.ais.tracker.AISTrack;
-import dk.tbsalling.ais.tracker.AISTracker;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
-import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
-import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -28,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /**

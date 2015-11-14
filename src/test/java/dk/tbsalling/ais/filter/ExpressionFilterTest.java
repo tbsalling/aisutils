@@ -11,11 +11,9 @@ import dk.tbsalling.aismessages.nmea.messages.NMEAMessage;
 import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.junit.Assert.assertFalse;
@@ -156,6 +154,50 @@ public class ExpressionFilterTest {
     }
 
     //
+    // Test COG
+    //
+
+    @Test
+    public void testCogGreaterThan() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("cog>270.0", msg -> { // triggers visitCog
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return ((DynamicDataReport) msg).getCourseOverGround() > 270.0;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float cog = track.getCourseOverGround();
+                if (cog == null)
+                    cog = 0.0f;
+                return cog > 270.0;
+            } else
+                return true;
+        });
+    }
+
+    @Test
+    public void testCogGreaterThanOrLessThan() throws Exception {
+        final AISTracker tracker = new AISTracker();
+
+        verifyExpressionFilter("cog>330.0 or cog<30.0", msg -> { // triggers visitAndOr
+            if (msg instanceof DynamicDataReport) {
+                tracker.update(msg);
+                return ((DynamicDataReport) msg).getCourseOverGround() > 330 || ((DynamicDataReport) msg).getCourseOverGround() < 30;
+            } else if (msg instanceof StaticDataReport) {
+                tracker.update(msg);
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMMSI());
+                Float cog = track.getCourseOverGround();
+                if (cog == null)
+                    cog = 0.0f;
+                return cog > 330 || cog < 30;
+            } else
+                return true;
+        });
+    }
+
+    //
     // Internal methods
     //
 
@@ -168,13 +210,14 @@ public class ExpressionFilterTest {
 
         processAISInputStream(inputStream, msg -> {
             try {
-                System.err.println("Testing " + msg);
-                boolean test = expressionFilter.test(msg);
-                if (verification.test(msg)) {
-                    assertTrue(test);
+                boolean testValue = expressionFilter.test(msg);
+                boolean verificationValue = verification.test(msg);
+                System.out.println(testValue + " " + verificationValue + " " + msg);
+                if (verificationValue) {
+                    assertTrue(testValue);
                     weSawTrueResults[0] = true;
                 } else {
-                    assertFalse(test);
+                    assertFalse(testValue);
                     weSawFalseResults[0] = true;
                 }
             } catch (IllegalArgumentException e) {
