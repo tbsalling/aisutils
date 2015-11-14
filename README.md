@@ -143,6 +143,32 @@ CREATED: AisTrack{mmsi=205264890, transponderClass=A, callsign='null', shipName=
 ...
 ```
 
+## AIS Filter
+
+The filtering feature of AISutils allows the user to express a filter expression in free text, and apply this against
+AISMessages.
+
+The filter is implemented simply as a Java 8 predicate; like this:
+
+```
+Predicate<AISMessage> expressionFilter = FilterFactory.newExpressionFilter("msgid=3");
+```
+
+This expressionFilter will return true only for AISMessages of type 3.
+
+Other possible expressions are:
+
+```
+FilterFactory.newExpressionFilter("msgid=3 or msgid=5");
+FilterFactory.newExpressionFilter("msgid in (1, 2, 3, 5)");
+FilterFactory.newExpressionFilter("msgid not in (1, 2, 3, 5");
+FilterFactory.newExpressionFilter("mmsi > 100000000 and mmsi < 219000000 and msgid in (1, 2, 3, 5)");
+FilterFactory.newExpressionFilter("sog > 5.0");
+FilterFactory.newExpressionFilter("cog < 180.0");
+FilterFactory.newExpressionFilter("lat > 55.0 and lat < 55.5 and lng > 10.0 and lng < 10.5");
+etc.
+```
+
 ## How to get, build and include AISutils in your project
 There's no formal release yet. But you can download AISutils from Github and and build it using maven:
 
@@ -165,7 +191,7 @@ Then add this to the pom.xml file of your own Java Maven project:
 
 Roadmap
 -------
-free-text filter expressions for AIS messages
+More advanced free-text filter expressions for AIS messages
 event triggering
 message archiving in Big Data stores
 export of KML-files for Google Earth
