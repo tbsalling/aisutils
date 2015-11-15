@@ -5,7 +5,14 @@ import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import java.util.function.Predicate;
 
 /**
- * Created by tbsalling on 03/02/15.
+ * FilterFactory is a factory class which is intended to create different types
+ * of AISMessage filters.
+ *
+ * Currently it supports the creation of ExpressionFilters, which are AISMessage
+ * filters based on a grammar of free-text expressions.
+ *
+ * @author Thomas Borg Salling
+ * @see ExpressionFilter
  */
 public final class FilterFactory {
 

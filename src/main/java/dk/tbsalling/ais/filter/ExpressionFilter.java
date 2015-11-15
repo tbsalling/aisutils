@@ -23,15 +23,51 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.function.Predicate;
 
 /**
- * AisFilter is a collection of Java 8 predicates which are capable of stateful filtering
- * of AIS messages.
+ * ExpressionFilter is a type of Predicate which can be used to filter AISMessages
+ * based on a free-text expression.
+ *
+ * The filtering is stateful in the sense that vessel-related messages are tracked
+ * so that e.g. a vessel's position, course and speed is taken into account even
+ * when static messages are processed.
+ *
+ * An ExpressionFilter cannot be created directly, but is instantiated through
+ * the FilterFactory.newExpressionFilter(...) method.
+ *
+ * The grammar currently supports the following fields:
+ * - msgid
+ * - mmsi
+ * - sog
+ * - cog
+ * - lat
+ * - lng
+ *
+ * And the following operators:
+ *    <       less than
+ *    <=      less than or equals
+ *    =       equals
+ *    >=      larger than or equals
+ *    >       larger than
+ *    !=      not equals
+ *    in      in set
+ *    not in  not in set
+ *
+ * And the following boolean expressions:
+ *    and
+ *    or
+ *
+ * Example expressions:
+ *    "sog>5.0"
+ *    "lat>55.0 and lat<56.0 and lng>9.0 and lng<11.0
+ *    "msgid in (1, 2, 3, 5)"
+ *    "mmsi not in (219001000, 219000000)"
+ *
+ * @author Thomas Borg Salling
+ * @see FilterFactory
  */
-@ThreadSafe
-public class ExpressionFilter implements Predicate<AISMessage> {
+class ExpressionFilter implements Predicate<AISMessage> {
 
     private final static Logger LOG = LoggerFactory.getLogger(ExpressionFilter.class);
 

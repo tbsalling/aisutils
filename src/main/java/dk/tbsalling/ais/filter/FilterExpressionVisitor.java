@@ -17,8 +17,13 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 
-
-public class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>> {
+/**
+ * This class is mainly an internal helper class implementing the ExpressionFilter
+ * functionality by the help of ANTLRv4.
+ *
+ * @author Thomas Borg Salling
+ */
+class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>> {
 
     private final static Logger LOG = LoggerFactory.getLogger(FilterExpressionVisitor.class);
 
