@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
+import dk.tbsalling.ais.filter.FilterFactory;
 import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
@@ -65,8 +66,34 @@ public class AISTracker implements TrackEventEmitter {
 
     private final static Logger LOG = LoggerFactory.getLogger(AISTracker.class);
 
+    private final Predicate<AISMessage> messageFilter;
+
+    /**
+     * Construct an AISTracker which processes all received AISMessages.
+     */
     public AISTracker() {
         LOG.info("AisTracker created.");
+        messageFilter = msg -> true;
+        shutdown = false;
+    }
+
+    /**
+     * Construct on AISTracker which processes only messages satisfying the messagePredicate.
+     * @param messageFilter
+     */
+    public AISTracker(Predicate<AISMessage> messageFilter) {
+        LOG.info("AisTracker created with custom predicate.");
+        this.messageFilter = messageFilter;
+        shutdown = false;
+    }
+
+    /**
+     * Construct on AISTracker which processes only messages satisfying the filter expression.
+     * @param filterExpression a message filter expression; e.g. "sog < 10", "mmsi < 300000000 and msgid in (1, 2, 3)", etc.
+     */
+    public AISTracker(String filterExpression) {
+        LOG.info("AisTracker created with filter expression: " + filterExpression);
+        this.messageFilter = FilterFactory.newExpressionFilter(filterExpression);
         shutdown = false;
     }
 
@@ -98,7 +125,9 @@ public class AISTracker implements TrackEventEmitter {
 
         Metadata metadata = aisMessage.getMetadata();
         Instant messageTimestamp = metadata == null ? Instant.now(Clock.systemUTC()) : Instant.ofEpochMilli(metadata.getReceived());
-        updateAisTrack(aisMessage, messageTimestamp);
+
+        if (messageFilter.test(aisMessage))
+            updateAisTrack(aisMessage, messageTimestamp);
     }
 
     /**
@@ -114,7 +143,8 @@ public class AISTracker implements TrackEventEmitter {
         requireNonNull(aisMessage);
         requireNonNull(messageTimestamp);
 
-        updateAisTrack(aisMessage, messageTimestamp);
+        if (messageFilter.test(aisMessage))
+            updateAisTrack(aisMessage, messageTimestamp);
     }
 
     /**
