@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import dk.tbsalling.ais.filter.FilterFactory;
 import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
 import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
@@ -78,22 +77,12 @@ public class AISTracker implements TrackEventEmitter {
     }
 
     /**
-     * Construct on AISTracker which processes only messages satisfying the messagePredicate.
+     * Construct on AISTracker which processes only messages satisfying the messageFilter.
      * @param messageFilter
      */
     public AISTracker(Predicate<AISMessage> messageFilter) {
         LOG.info("AisTracker created with custom predicate.");
         this.messageFilter = messageFilter;
-        shutdown = false;
-    }
-
-    /**
-     * Construct on AISTracker which processes only messages satisfying the filter expression.
-     * @param filterExpression a message filter expression; e.g. "sog < 10", "mmsi < 300000000 and msgid in (1, 2, 3)", etc.
-     */
-    public AISTracker(String filterExpression) {
-        LOG.info("AisTracker created with filter expression: " + filterExpression);
-        this.messageFilter = FilterFactory.newExpressionFilter(filterExpression);
         shutdown = false;
     }
 

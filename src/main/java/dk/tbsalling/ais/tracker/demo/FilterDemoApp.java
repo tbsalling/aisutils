@@ -1,5 +1,6 @@
 package dk.tbsalling.ais.tracker.demo;
 
+import dk.tbsalling.ais.filter.FilterFactory;
 import dk.tbsalling.ais.tracker.AISTrack;
 import dk.tbsalling.ais.tracker.AISTracker;
 
@@ -14,7 +15,7 @@ public class FilterDemoApp {
         InputStream inputStream = new ByteArrayInputStream(nmea.getBytes());
 
         // Track only vessels with speed > 10.0 knots; see more expressions in the README.md file.
-        AISTracker tracker = new AISTracker("sog > 10.0");
+        AISTracker tracker = new AISTracker(FilterFactory.newExpressionFilter("sog > 10.0"));
         tracker.update(inputStream);
 
         // Get stats from tracker
