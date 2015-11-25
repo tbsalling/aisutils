@@ -69,9 +69,9 @@ class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>
 
     @Override
     public Predicate<AISMessage> visitMmsiInList(AisFilterParser.MmsiInListContext ctx) {
-        ArrayList<Long> mmsiList = Lists.newArrayList();
+        ArrayList<Integer> mmsiList = Lists.newArrayList();
         List<TerminalNode> mmsis = ctx.intList().INT();
-        mmsis.forEach(mmsi -> mmsiList.add(Long.valueOf(mmsi.getText())));
+        mmsis.forEach(mmsi -> mmsiList.add(Integer.valueOf(mmsi.getText())));
 
         return ctx.in() != null ? msg -> mmsiList.contains(msg.getSourceMmsi().getMMSI()) : msg -> !mmsiList.contains(msg.getSourceMmsi().getMMSI());
     }

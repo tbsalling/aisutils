@@ -92,12 +92,12 @@ public class ExpressionFilterTest {
 
     @Test
     public void testMmsiIdInList() throws Exception {
-        verifyExpressionFilter("mmsi in (258009500, 257287000, 2734450)", msg -> Lists.newArrayList(258009500L, 257287000L, 2734450L).contains(msg.getSourceMmsi().getMMSI()));
+        verifyExpressionFilter("mmsi in (227006760, 258009500, 257287000, 2734450)", msg -> Lists.newArrayList(227006760, 258009500, 257287000, 2734450).contains(msg.getSourceMmsi().getMMSI()));
     }
 
     @Test
     public void testMmsiIdNotInList() throws Exception {
-        verifyExpressionFilter("mmsi not in (258009500, 257287000, 2734450)", msg -> ! Lists.newArrayList(258009500L, 257287000L, 2734450L).contains(msg.getSourceMmsi().getMMSI()));
+        verifyExpressionFilter("mmsi not in (258009500, 257287000, 2734450)", msg -> ! Lists.newArrayList(258009500, 257287000, 2734450).contains(msg.getSourceMmsi().getMMSI()));
     }
 
     //
@@ -313,7 +313,7 @@ public class ExpressionFilterTest {
             try {
                 boolean testValue = expressionFilter.test(msg);
                 boolean verificationValue = verification.test(msg);
-                System.out.println(testValue + " " + verificationValue + " " + msg);
+                System.out.println("Test value: " + testValue + " expected: " + verificationValue + " " + msg);
                 if (verificationValue) {
                     assertTrue(testValue);
                     weSawTrueResults[0] = true;
