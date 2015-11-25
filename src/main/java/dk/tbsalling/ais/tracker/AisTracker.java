@@ -50,6 +50,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import static java.time.Instant.EPOCH;
+import static java.time.Instant.now;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -113,7 +115,7 @@ public class AISTracker implements TrackEventEmitter {
         requireNonNull(aisMessage);
 
         Metadata metadata = aisMessage.getMetadata();
-        Instant messageTimestamp = metadata == null ? Instant.now(Clock.systemUTC()) : Instant.ofEpochMilli(metadata.getReceived());
+        Instant messageTimestamp = metadata == null ? now(Clock.systemUTC()) : metadata.getReceived();
 
         if (messageFilter.test(aisMessage))
             updateAisTrack(aisMessage, messageTimestamp);
@@ -310,7 +312,7 @@ public class AISTracker implements TrackEventEmitter {
 
     /** Time of last update - perceived by the tracker as current time; or time as seen on the wallclock. */
     @GuardedBy("lock")
-    private Instant wallclock = Instant.EPOCH;
+    private Instant wallclock = EPOCH;
 
     private void setWallclock(Instant wallclock) {
         lock.lock();
@@ -353,7 +355,7 @@ public class AISTracker implements TrackEventEmitter {
 
     /** The instant in time when the last pruning job ran */
     @GuardedBy("lock")
-    private Instant timeOfLastPruning = Instant.EPOCH;
+    private Instant timeOfLastPruning = EPOCH;
 
     /** Max duration to keep dynamic history of each track */
     private final static Duration DYNAMIC_DATA_HISTORY_MAX_AGE = Duration.ofHours(6);
@@ -420,7 +422,7 @@ public class AISTracker implements TrackEventEmitter {
 
     /** The instant in time when the last pruning job ran */
     @GuardedBy("lock")
-    private Instant timeOfLastStaleCheck = Instant.EPOCH;
+    private Instant timeOfLastStaleCheck = EPOCH;
 
     //
     // Fields and methods related to event firing
