@@ -46,11 +46,12 @@ class DoubletFilter implements Predicate<AISMessage> {
     /** Google's caching mechanism is not perfect for this - but adequate. A very few dupes may slip through. */
     private final Cache<BigInteger, Optional<AISMessage>> cache;
 
-    private DoubletFilter() {
-        cache = null;
+    /** Create a doublet filter with default window settings */
+    DoubletFilter() {
+        this(15, TimeUnit.SECONDS);
     }
 
-    public DoubletFilter(long duration, TimeUnit unit) {
+    DoubletFilter(long duration, TimeUnit unit) {
         if (duration <= 0)
             throw new IllegalArgumentException("duration must be positive.");
         requireNonNull(unit);

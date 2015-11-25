@@ -22,6 +22,10 @@ public final class FilterFactory {
         return new ExpressionFilter(expression);
     }
 
+    public static Predicate<AISMessage> newDoubletFilter() {
+        return new DoubletFilter();
+    }
+
     public static Predicate<AISMessage> newDoubletFilter(long duration, TimeUnit unit) {
         return new DoubletFilter(duration, unit);
     }
