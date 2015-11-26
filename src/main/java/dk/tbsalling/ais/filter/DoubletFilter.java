@@ -74,9 +74,8 @@ class DoubletFilter implements Predicate<AISMessage> {
     public boolean test(AISMessage aisMessage) {
         boolean filterPassed = true;
 
-        BigInteger digest = null;
         try {
-            digest = new BigInteger(aisMessage.digest());
+            BigInteger digest = new BigInteger(aisMessage.digest());
 
             if (cache.getIfPresent(digest) != null)
                 filterPassed = false;
