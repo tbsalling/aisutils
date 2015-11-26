@@ -145,10 +145,23 @@ CREATED: AisTrack{mmsi=205264890, transponderClass=A, callsign='null', shipName=
 
 ## AIS Filter
 
-The filtering feature of AISutils allows the user to express a filter expression in free text, and apply this against
-AISMessages.
+The AIS filter package offers a number of different filters, which can be used to filter AIS messages in a stream of messages.
+All filters are implemented as Java Predicates, like this:
 
-The filter is implemented simply as a Java 8 predicate; like this:
+```
+Predicate<AISMessage> filter = ...;
+```
+
+Filters can be used as-is/standalone by applying them to AISMessages, or they can supplied to e.g. the AISTracker 
+to filter the AISMessages used to update tracks by e.g. geography, ship type or to avoid duplicate messages.
+
+Filters can be chained by applying the 'and', 'or' and 'negate' features of the Java Predicate<> interface.
+
+### Expression filter
+The expression filter class allows the programmer (or end user) to express a filter expression in free text, 
+and apply this against AISMessages.
+
+The filter is instantiated from the FilterFactory like this:
 
 ```
 Predicate<AISMessage> expressionFilter = FilterFactory.newExpressionFilter("msgid=3");
@@ -156,7 +169,7 @@ Predicate<AISMessage> expressionFilter = FilterFactory.newExpressionFilter("msgi
 
 This expressionFilter will return true only for AISMessages of type 3.
 
-Other possible expressions are:
+The expression grammar supports a number of free text expressions. Other possible expressions are:
 
 ```
 FilterFactory.newExpressionFilter("msgid=3 or msgid=5");
@@ -167,6 +180,22 @@ FilterFactory.newExpressionFilter("sog > 5.0");
 FilterFactory.newExpressionFilter("cog < 180.0");
 FilterFactory.newExpressionFilter("lat > 55.0 and lat < 55.5 and lng > 10.0 and lng < 10.5");
 etc.
+```
+
+### Doublet filter
+In some systems it is normal to observe duplicate AIS messages in the message stream. This
+happens for instance in systems where several AIS receivers have overlapping geographical
+receival areas. In this case a transmission from a vessel can be picked up by more than one 
+receiver and thus cause doublets in the message stream.
+
+The doublet filter works by appying a sliding time window over the message stream. If a message
+occurs more than one time inside a time window of, say, 15 seconds, then only the first message
+will pass through the filter.
+
+Duplicate filters are also instantiated through the FilterFactory class, like this:
+
+```
+FilterFactory.newDoubletFilter(15, TimeUnit.SECONDS);
 ```
 
 ## How to get, build and include AISutils in your project
