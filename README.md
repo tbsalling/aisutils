@@ -153,7 +153,13 @@ Predicate<AISMessage> filter = ...;
 ```
 
 Filters can be used as-is/standalone by applying them to AISMessages, or they can supplied to e.g. the AISTracker 
-to filter the AISMessages used to update tracks by e.g. geography, ship type or to avoid duplicate messages.
+to filter the AISMessages used to update tracks by e.g. geography, ship type or to avoid duplicate messages. An AISTracker
+using a filter, can be instantiated like this:
+
+```
+Predicate<AISMessage> filter = ...;
+AisTracker tracker = new AisTracker(filter);
+```
 
 Filters can be chained by applying the 'and', 'or' and 'negate' features of the Java Predicate<> interface.
 
@@ -195,7 +201,7 @@ will pass through the filter.
 Duplicate filters are also instantiated through the FilterFactory class, like this:
 
 ```
-FilterFactory.newDoubletFilter(15, TimeUnit.SECONDS);
+Predicate<AISMessage> doubletFilter = FilterFactory.newDoubletFilter(15, TimeUnit.SECONDS);
 ```
 
 ## How to get, build and include AISutils in your project
