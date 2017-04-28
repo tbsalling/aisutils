@@ -1,6 +1,7 @@
 package dk.tbsalling.ais.tracker;
 
 import com.google.common.eventbus.Subscribe;
+import com.google.common.util.concurrent.MoreExecutors;
 import dk.tbsalling.ais.tracker.events.*;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.nmea.NMEAMessageHandler;
@@ -32,7 +33,7 @@ public class AISTrackerEventsTest {
         AISTracker aisTracker = new AISTracker();
         aisTracker.setStalePeriod(Duration.ofMinutes(10));
         aisTracker.setStaleCheckPeriod(Duration.ofMinutes(1));
-        //aisTracker.setTaskExecutor(new CurrentThreadExecutor());
+        aisTracker.setTaskExecutor(MoreExecutors.newDirectExecutorService());
         InputStream inputStream = Thread.currentThread().getContextClassLoader().getResource("ais-sample-1.nmea").openStream();
 
         aisTracker.registerSubscriber(new Object() {
@@ -96,8 +97,8 @@ public class AISTrackerEventsTest {
         assertEquals(933, numCreateEvents.get());
         assertEquals(7, numUpdateEvents.get());
         assertEquals(6, numDynamicUpdateEvents.get());
-        // TODO assertEquals(812, numDeleteEvents.get());
-        // TODO assertEquals(111, aisTracker.getNumberOfAisTracks());
+        assertEquals(812, numDeleteEvents.get());
+        assertEquals(121, aisTracker.getNumberOfAisTracks());
     }
 
     private void processAISInputStream(InputStream inputStream, Consumer<AISMessage> doSomething) throws Exception {
