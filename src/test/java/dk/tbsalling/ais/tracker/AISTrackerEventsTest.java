@@ -1,11 +1,8 @@
 package dk.tbsalling.ais.tracker;
 
 import com.google.common.eventbus.Subscribe;
-import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
-import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
-import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
-import dk.tbsalling.ais.tracker.events.AisTrackUpdatedEvent;
-import dk.tbsalling.ais.tracker.events.WallclockChangedEvent;
+import com.google.common.util.concurrent.MoreExecutors;
+import dk.tbsalling.ais.tracker.events.*;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.nmea.NMEAMessageHandler;
 import dk.tbsalling.aismessages.nmea.exceptions.InvalidMessage;
@@ -21,9 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class AISTrackerEventsTest {
 
@@ -38,7 +33,7 @@ public class AISTrackerEventsTest {
         AISTracker aisTracker = new AISTracker();
         aisTracker.setStalePeriod(Duration.ofMinutes(10));
         aisTracker.setStaleCheckPeriod(Duration.ofMinutes(1));
-        aisTracker.setTaskExecutor(new CurrentThreadExecutor());
+        aisTracker.setTaskExecutor(MoreExecutors.newDirectExecutorService());
         InputStream inputStream = Thread.currentThread().getContextClassLoader().getResource("ais-sample-1.nmea").openStream();
 
         aisTracker.registerSubscriber(new Object() {

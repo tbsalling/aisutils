@@ -20,11 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
-import dk.tbsalling.ais.tracker.events.AisTrackCreatedEvent;
-import dk.tbsalling.ais.tracker.events.AisTrackDeletedEvent;
-import dk.tbsalling.ais.tracker.events.AisTrackDynamicsUpdatedEvent;
-import dk.tbsalling.ais.tracker.events.AisTrackUpdatedEvent;
-import dk.tbsalling.ais.tracker.events.WallclockChangedEvent;
+import dk.tbsalling.ais.tracker.events.*;
 import dk.tbsalling.aismessages.AISInputStreamReader;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
@@ -197,8 +193,19 @@ public class AISTracker implements TrackEventEmitter {
         }
         try {
             taskExecutor.shutdown();
-            taskExecutor.awaitTermination(5, TimeUnit.SECONDS);
+            boolean cleanShutdown = taskExecutor.awaitTermination(1, TimeUnit.MINUTES);
             LOG.debug("taskExecutor: shutdown:" + taskExecutor.isShutdown() + " terminated:" + taskExecutor.isTerminated());
+            if (cleanShutdown == false)
+                LOG.warn("AisTracker was shut down before all pending tasks were processed");
+        } catch (InterruptedException e) {
+            LOG.error("Tracker failed to shutdown cleanly", e);
+        }
+        try {
+            eventBusExecutor.shutdown();
+            boolean cleanShutdown = eventBusExecutor.awaitTermination(1, TimeUnit.MINUTES);
+            LOG.debug("eventBusExecutor: shutdown:" + eventBusExecutor.isShutdown() + " terminated:" + eventBusExecutor.isTerminated());
+            if (cleanShutdown == false)
+                LOG.warn("AisTracker was shut down before all pending events were processed");
         } catch (InterruptedException e) {
             LOG.error("Tracker failed to shutdown cleanly", e);
         }
@@ -429,7 +436,8 @@ public class AISTracker implements TrackEventEmitter {
     // The event bus is Guava Eventbus - see more: http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/eventbus/EventBus.html
     //
 
-    private final EventBus eventBus = new AsyncEventBus(Executors.newCachedThreadPool());
+    private final ExecutorService eventBusExecutor = Executors.newCachedThreadPool();
+    private final EventBus eventBus = new AsyncEventBus(eventBusExecutor);
 
     @Override
     public void registerSubscriber(Object subscriber) {
