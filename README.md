@@ -205,7 +205,18 @@ Predicate<AISMessage> doubletFilter = FilterFactory.newDoubletFilter(15, TimeUni
 ```
 
 ## How to get, build and include AISutils in your project
-There's no formal release yet. But you can download AISutils from Github and and build it using maven:
+You do not need to compile AISutils yourself. It is available in [Maven Central](https://mvnrepository.com/artifact/dk.tbsalling/aisutils). So if you are using Maven, 
+all you need to do is add these lines to your pom.xml:
+
+``` xml
+<dependency>
+    <groupId>dk.tbsalling</groupId>
+    <artifactId>aisutils</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+If you need a bleeding edge version, which is not yet released, then you can download AISutils from Github and and build yourself it using maven:
 
 ```
 $ git clone git@github.com:tbsalling/aisutils.git
@@ -220,7 +231,7 @@ Then add this to the pom.xml file of your own Java Maven project:
 <dependency>
     <groupId>dk.tbsalling</groupId>
     <artifactId>aisutils</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 </dependency>
 ```
 
