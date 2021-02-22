@@ -74,9 +74,8 @@ public class AISTracker implements TrackEventEmitter {
         shutdown = false;
     }
 
-    /**
+    /*
      * Construct on AISTracker which processes only messages satisfying the messageFilter.
-     * @param messageFilter
      */
     public AISTracker(Predicate<AISMessage> messageFilter) {
         LOG.info("AisTracker created with custom predicate.");
@@ -84,13 +83,11 @@ public class AISTracker implements TrackEventEmitter {
         shutdown = false;
     }
 
-    /**
+    /*
      * Update the tracker from an input stream of NMEA armoured AIS messages.
      *
      * If an IOException is thrown, the state of the tracker is maintained, and tracking
      * is resumed when this method is called again with a new InputStream.
-     *
-     * @param nmeaInputStream
      */
     public void update(InputStream nmeaInputStream) throws IOException {
         new AISInputStreamReader(nmeaInputStream, aisMessage -> update(aisMessage)).run();
@@ -168,12 +165,12 @@ public class AISTracker implements TrackEventEmitter {
         return threadSafeGet(() -> ImmutableSet.copyOf(tracks.values()));
     }
 
-    /** Return the value of the current wallclock. */
+    /* Return the value of the current wallclock. */
     public Instant getWallclock() {
         return threadSafeGet(() -> wallclock);
     }
 
-    /** Return the instant when track history pruning was last performed. */
+    /* Return the instant when track history pruning was last performed. */
     public Instant getTimeOfLastPruning() {
         return threadSafeGet(() -> timeOfLastPruning);
     }

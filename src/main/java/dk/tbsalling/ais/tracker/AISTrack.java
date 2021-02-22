@@ -293,7 +293,7 @@ public final class AISTrack {
         return dynamicDataReport instanceof ExtendedDynamicDataReport ? ((ExtendedDynamicDataReport) dynamicDataReport).getSecond() : null;
     }
 
-    /** Return an immutable and sorted map of this track's dynamic history. */
+    /* Return an immutable and sorted map of this track's dynamic history. */
     public ImmutableSortedMap<Instant, DynamicDataReport> getDynamicDataHistory() {
         return dynamicDataHistory == null ? ImmutableSortedMap.copyOf(Maps.newTreeMap()) : dynamicDataHistory;
     }
