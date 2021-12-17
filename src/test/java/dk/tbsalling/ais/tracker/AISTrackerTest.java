@@ -50,6 +50,7 @@ public class AISTrackerTest {
         assertTrue(tracker.isTracked(211179670));
         assertTrue(tracker.isTracked(236037000));
         assertTrue(tracker.isTracked(244660180));
+        assertTrue(tracker.isTracked(992111811));
         assertFalse(tracker.isTracked(219000000));
     }
 
