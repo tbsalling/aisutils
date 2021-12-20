@@ -94,11 +94,11 @@ public class AISTrackerEventsTest {
 
         assertTrue(aisTracker.isShutdown());
         assertEquals(1001, numWallclockEvents.get());
-        assertEquals(933, numCreateEvents.get());
+        assertEquals(939, numCreateEvents.get());
         assertEquals(7, numUpdateEvents.get());
         assertEquals(6, numDynamicUpdateEvents.get());
-        assertEquals(812, numDeleteEvents.get());
-        assertEquals(121, aisTracker.getNumberOfAisTracks());
+        assertEquals(816, numDeleteEvents.get());
+        assertEquals(123, aisTracker.getNumberOfAisTracks());
     }
 
     private void processAISInputStream(InputStream inputStream, Consumer<AISMessage> doSomething) throws Exception {

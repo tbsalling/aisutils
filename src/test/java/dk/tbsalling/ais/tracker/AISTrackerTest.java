@@ -42,7 +42,7 @@ public class AISTrackerTest {
 
     @Test
     public void testGetNumberOfAisTracks() {
-        assertEquals(916, tracker.getNumberOfAisTracks());
+        assertEquals(922, tracker.getNumberOfAisTracks());
     }
 
     @Test
@@ -50,6 +50,7 @@ public class AISTrackerTest {
         assertTrue(tracker.isTracked(211179670));
         assertTrue(tracker.isTracked(236037000));
         assertTrue(tracker.isTracked(244660180));
+        assertTrue(tracker.isTracked(992111811));
         assertFalse(tracker.isTracked(219000000));
     }
 
@@ -76,7 +77,7 @@ public class AISTrackerTest {
     @Test
     public void testGetAisTracks() throws Exception {
         Set<AISTrack> aisTracks = tracker.getAisTracks();
-        assertEquals(916, aisTracks.size());
+        assertEquals(922, aisTracks.size());
 
         final boolean[] found = {false};
         aisTracks.forEach(track -> { if (track.getMmsi() == 236037000) found[0] = true; });

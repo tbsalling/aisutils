@@ -2,10 +2,7 @@ package dk.tbsalling.ais.tracker;
 
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Maps;
-import dk.tbsalling.aismessages.ais.messages.AISMessage;
-import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
-import dk.tbsalling.aismessages.ais.messages.ExtendedDynamicDataReport;
-import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
+import dk.tbsalling.aismessages.ais.messages.*;
 import dk.tbsalling.aismessages.ais.messages.types.ShipType;
 import dk.tbsalling.aismessages.ais.messages.types.TransponderClass;
 
@@ -27,12 +24,14 @@ public final class AISTrack {
     AISTrack(StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
         requireNonNull(staticDataReport);
         requireNonNull(timeOfStaticUpdate);
-        validateArgs(staticDataReport, null, timeOfStaticUpdate, null);
+        validateArgs(staticDataReport, null, null, timeOfStaticUpdate, null, null);
 
         this.staticDataReport = staticDataReport;
         this.dynamicDataReport = null;
+        this.aidToNavigationReport = null;
         this.timeOfStaticUpdate = timeOfStaticUpdate;
         this.timeOfDynamicUpdate = null;
+        this.timeOfAtonUpdate = null;
         this.dynamicDataHistory = null;
 
         validateState();
@@ -41,24 +40,44 @@ public final class AISTrack {
     AISTrack(DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
         requireNonNull(dynamicDataReport);
         requireNonNull(timeOfDynamicUpdate);
-        validateArgs(null, dynamicDataReport, null, timeOfDynamicUpdate);
+        validateArgs(null, dynamicDataReport, null, null, timeOfDynamicUpdate, null);
 
         this.staticDataReport = null;
         this.dynamicDataReport = dynamicDataReport;
+        this.aidToNavigationReport = null;
         this.timeOfStaticUpdate = null;
         this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        this.timeOfAtonUpdate = null;
+        this.dynamicDataHistory = null;
+
+        validateState();
+    }
+
+    AISTrack(AidToNavigationReport aidToNavigationReport, Instant timeOfAtonUpdate) {
+        requireNonNull(aidToNavigationReport);
+        requireNonNull(timeOfAtonUpdate);
+        validateArgs(null, null, aidToNavigationReport, null, null, timeOfAtonUpdate);
+
+        this.staticDataReport = null;
+        this.dynamicDataReport = null;
+        this.aidToNavigationReport = aidToNavigationReport;
+        this.timeOfStaticUpdate = null;
+        this.timeOfDynamicUpdate = null;
+        this.timeOfAtonUpdate = timeOfAtonUpdate;
         this.dynamicDataHistory = null;
 
         validateState();
     }
 
     AISTrack(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
-        validateArgs(staticDataReport, dynamicDataReport, timeOfStaticUpdate, timeOfDynamicUpdate);
+        validateArgs(staticDataReport, dynamicDataReport, null, timeOfStaticUpdate, timeOfDynamicUpdate, null);
 
         this.staticDataReport = staticDataReport;
         this.dynamicDataReport = dynamicDataReport;
+        this.aidToNavigationReport = null;
         this.timeOfStaticUpdate = timeOfStaticUpdate;
         this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        this.timeOfAtonUpdate = null;
         this.dynamicDataHistory = null;
 
         validateState();
@@ -70,12 +89,14 @@ public final class AISTrack {
     AISTrack(AISTrack oldTrack, StaticDataReport staticDataReport, Instant timeOfStaticUpdate) {
         requireNonNull(staticDataReport);
         requireNonNull(timeOfStaticUpdate);
-        validateArgs(staticDataReport, null, timeOfStaticUpdate, null);
+        validateArgs(staticDataReport, null,null, timeOfStaticUpdate, null, null);
 
         this.staticDataReport = staticDataReport;
         this.dynamicDataReport = oldTrack.getDynamicDataReport();
+        this.aidToNavigationReport = oldTrack.getAidToNavigationReport();
         this.timeOfStaticUpdate = timeOfStaticUpdate;
         this.timeOfDynamicUpdate = oldTrack.getTimeOfDynamicUpdate();
+        this.timeOfAtonUpdate = oldTrack.getTimeOfAtonUpdate();
         validateState();
 
         dynamicDataHistory = oldTrack.dynamicDataHistory;
@@ -87,12 +108,14 @@ public final class AISTrack {
     AISTrack(AISTrack oldTrack, DynamicDataReport dynamicDataReport, Instant timeOfDynamicUpdate) {
         requireNonNull(dynamicDataReport);
         requireNonNull(timeOfDynamicUpdate);
-        validateArgs(null, dynamicDataReport, null, timeOfDynamicUpdate);
+        validateArgs(null, dynamicDataReport, null, null, timeOfDynamicUpdate, null);
 
         this.staticDataReport = oldTrack.getStaticDataReport();
         this.dynamicDataReport = dynamicDataReport;
+        this.aidToNavigationReport = oldTrack.getAidToNavigationReport();
         this.timeOfStaticUpdate = oldTrack.getTimeOfStaticUpdate();
         this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        this.timeOfAtonUpdate = oldTrack.getTimeOfAtonUpdate();
         this.dynamicDataHistory = copyDynamicHistory(oldTrack);
 
         validateState();
@@ -102,12 +125,14 @@ public final class AISTrack {
      * Create a new AisTrack using another track to build history.
      */
     AISTrack(AISTrack oldTrack, StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
-        validateArgs(staticDataReport, dynamicDataReport, timeOfStaticUpdate, timeOfDynamicUpdate);
+        validateArgs(staticDataReport, dynamicDataReport, null, timeOfStaticUpdate, timeOfDynamicUpdate, null);
 
         this.staticDataReport = staticDataReport;
         this.dynamicDataReport = dynamicDataReport;
+        this.aidToNavigationReport = oldTrack.getAidToNavigationReport();
         this.timeOfStaticUpdate = timeOfStaticUpdate;
         this.timeOfDynamicUpdate = timeOfDynamicUpdate;
+        this.timeOfAtonUpdate = oldTrack.getTimeOfAtonUpdate();
         this.dynamicDataHistory = copyDynamicHistory(oldTrack);
 
         validateState();
@@ -130,6 +155,7 @@ public final class AISTrack {
     AISTrack(AISTrack originalTrack, Predicate<Instant> keepInstantPredicate) {
         this.staticDataReport = originalTrack.staticDataReport;
         this.dynamicDataReport = originalTrack.dynamicDataReport;
+        this.aidToNavigationReport = originalTrack.aidToNavigationReport;
 
         dynamicDataHistory = new ImmutableSortedMap.Builder<Instant, DynamicDataReport>(Comparator.<Instant>naturalOrder())
             .putAll(
@@ -141,12 +167,14 @@ public final class AISTrack {
 
         this.timeOfStaticUpdate = originalTrack.timeOfStaticUpdate;
         this.timeOfDynamicUpdate = dynamicDataHistory.lastKey();
+        this.timeOfAtonUpdate = originalTrack.timeOfAtonUpdate;
     }
 
-    private void validateArgs(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate) {
+    private void validateArgs(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, AidToNavigationReport aidToNavigationReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate, Instant timeOfAtonUpdate) {
         final long mmsiStatic = staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMMSI() : -1;
         final long mmsiDynamic = dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() : -1;
-        if (mmsiStatic == -1 && mmsiDynamic == -1)
+        final long mmsiAton = aidToNavigationReport != null ? ((AISMessage) aidToNavigationReport).getSourceMmsi().getMMSI() : -1;
+        if (mmsiStatic == -1 && mmsiDynamic == -1 && mmsiAton == -1)
             throw new IllegalArgumentException();
         if (mmsiStatic != -1 && mmsiDynamic != -1 && mmsiStatic != mmsiDynamic)
             throw new IllegalArgumentException("Provided constructor arguments must have same MMSI, not " + mmsiStatic + " and " + mmsiDynamic);
@@ -160,20 +188,26 @@ public final class AISTrack {
                 throw new IllegalArgumentException("Constructor arg timeOfStaticUpdate (" + timeOfStaticUpdate + ") must be after time of last update (" + timeOfLastUpdate + ")");
             if (timeOfDynamicUpdate != null && !timeOfDynamicUpdate.isAfter(timeOfLastUpdate))
                 throw new IllegalArgumentException("Constructor arg timeOfDynamicUpdate (" + timeOfDynamicUpdate + ") must be after time of last update (" + timeOfLastUpdate + ")");
+            if (timeOfAtonUpdate != null && !timeOfAtonUpdate.isAfter(timeOfLastUpdate))
+                throw new IllegalArgumentException("Constructor arg timeOfAtonUpdate (" + timeOfAtonUpdate + ") must be after time of last update (" + timeOfLastUpdate + ")");
         }
     }
 
     private void validateState() {
-        if (staticDataReport == null && dynamicDataReport == null)
-            throw new IllegalArgumentException("A StaticDataReport or BasicDynamicDataReport must be provided");
+        if (staticDataReport == null && dynamicDataReport == null && aidToNavigationReport == null)
+            throw new IllegalArgumentException("A StaticDataReport or BasicDynamicDataReport or AidToNavigationReport must be provided");
         if (staticDataReport != null && timeOfStaticUpdate == null)
             throw new IllegalArgumentException("timeOfStaticUpdate cannot be null when staticDataReport is not");
         if (dynamicDataReport != null && timeOfDynamicUpdate == null)
             throw new IllegalArgumentException("timeOfDynamicUpdate cannot be null when dynamicDataReport is not");
+        if (aidToNavigationReport != null && timeOfAtonUpdate == null)
+            throw new IllegalArgumentException("timeOfAtonUpdate cannot be null when aidToNavigationReport is not");
         if (timeOfStaticUpdate != null && staticDataReport == null)
             throw new IllegalArgumentException("timeOfStaticUpdate cannot be provided when staticDataReport is not");
         if (timeOfDynamicUpdate != null && dynamicDataReport == null)
             throw new IllegalArgumentException("timeOfDynamicUpdate cannot be provided when dynamicDataReport is not");
+        if (timeOfAtonUpdate != null && aidToNavigationReport == null)
+            throw new IllegalArgumentException("timeOfAtonUpdate cannot be provided when aidToNavigationReport is not");
         if (getMmsi() <= 0) // TODO http://en.wikipedia.org/wiki/Maritime_Mobile_Service_Identity
             throw new IllegalArgumentException("MMSI " + getMmsi() + " is invalid.");
     }
@@ -203,13 +237,16 @@ public final class AISTrack {
     public int hashCode() {
         int result = staticDataReport != null ? staticDataReport.hashCode() : 0;
         result = 31*result + (dynamicDataReport != null ? dynamicDataReport.hashCode() : 0);
+        result = 31*result + (aidToNavigationReport != null ? aidToNavigationReport.hashCode() : 0);
         result = 31*result + (timeOfStaticUpdate != null ? timeOfStaticUpdate.hashCode() : 0);
         result = 31*result + (timeOfDynamicUpdate != null ? timeOfDynamicUpdate.hashCode() : 0);
         return result;
     }
 
     public long getMmsi() {
-        return dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() : ((AISMessage) staticDataReport).getSourceMmsi().getMMSI();
+        return dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() :
+                staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMMSI() :
+                ((AISMessage) aidToNavigationReport).getSourceMmsi().getMMSI();
     }
 
     public TransponderClass getTransponderClass() {
@@ -217,12 +254,23 @@ public final class AISTrack {
     }
 
     public Instant getTimeOfLastUpdate() {
-        if (timeOfStaticUpdate == null)
+        if (timeOfStaticUpdate == null && timeOfAtonUpdate == null)
             return timeOfDynamicUpdate;
-        else if (timeOfDynamicUpdate == null)
+        else if (timeOfDynamicUpdate == null && timeOfAtonUpdate == null)
             return timeOfStaticUpdate;
-        else
+        else if (timeOfStaticUpdate == null && timeOfDynamicUpdate == null)
+            return timeOfAtonUpdate;
+
+        else if (timeOfStaticUpdate != null && timeOfDynamicUpdate != null && timeOfAtonUpdate != null)
+            return timeOfStaticUpdate.isBefore(timeOfDynamicUpdate) ?
+                    timeOfDynamicUpdate.isBefore(timeOfAtonUpdate) ? timeOfAtonUpdate : timeOfDynamicUpdate :
+                    timeOfStaticUpdate;
+        else if (timeOfStaticUpdate != null && timeOfDynamicUpdate != null)
             return timeOfStaticUpdate.isBefore(timeOfDynamicUpdate) ? timeOfDynamicUpdate : timeOfStaticUpdate;
+        else if (timeOfDynamicUpdate != null)
+            return timeOfDynamicUpdate.isBefore(timeOfAtonUpdate) ? timeOfAtonUpdate : timeOfDynamicUpdate;
+        else
+            return timeOfStaticUpdate.isBefore(timeOfAtonUpdate) ? timeOfAtonUpdate : timeOfStaticUpdate;
     }
 
     public Instant getTimeOfStaticUpdate() {
@@ -233,12 +281,20 @@ public final class AISTrack {
         return timeOfDynamicUpdate;
     }
 
+    public Instant getTimeOfAtonUpdate() {
+        return timeOfAtonUpdate;
+    }
+
     public StaticDataReport getStaticDataReport() {
         return staticDataReport;
     }
 
     public DynamicDataReport getDynamicDataReport() {
         return dynamicDataReport;
+    }
+
+    public AidToNavigationReport getAidToNavigationReport() {
+        return aidToNavigationReport;
     }
 
     public String getCallsign() {
@@ -300,8 +356,10 @@ public final class AISTrack {
 
     private final StaticDataReport staticDataReport;
     private final DynamicDataReport dynamicDataReport;
+    private final AidToNavigationReport aidToNavigationReport;
     private final Instant timeOfStaticUpdate;
     private final Instant timeOfDynamicUpdate;
+    private final Instant timeOfAtonUpdate;
 
     /* Dynamic history of the track excluding the most recent, current value */
     private final ImmutableSortedMap<Instant, DynamicDataReport> dynamicDataHistory;

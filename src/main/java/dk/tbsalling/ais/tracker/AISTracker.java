@@ -22,10 +22,7 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import dk.tbsalling.ais.tracker.events.*;
 import dk.tbsalling.aismessages.AISInputStreamReader;
-import dk.tbsalling.aismessages.ais.messages.AISMessage;
-import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
-import dk.tbsalling.aismessages.ais.messages.Metadata;
-import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
+import dk.tbsalling.aismessages.ais.messages.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -240,6 +237,12 @@ public class AISTracker implements TrackEventEmitter {
                 } else {
                     insertAisTrack(mmsi, (DynamicDataReport) aisMessage, messageTimestamp);
                 }
+            } else if (aisMessage instanceof AidToNavigationReport) {
+                if (isTracked(mmsi)) {
+                    updateAisTrack(mmsi, (AidToNavigationReport) aisMessage, messageTimestamp);
+                } else {
+                    insertAisTrack(mmsi, (AidToNavigationReport) aisMessage, messageTimestamp);
+                }
             }
             if (isHistoryPruneNeeded()) {
                 taskExecutor.execute(() -> processTrackHistory());
@@ -266,6 +269,13 @@ public class AISTracker implements TrackEventEmitter {
         fireTrackCreated(aisTrack);
     }
 
+    private void insertAisTrack(final long mmsi, final AidToNavigationReport aidToNavigationReport, final Instant msgTimestamp) {
+        /* Assumes lock is locked */
+        final AISTrack aisTrack = new AISTrack(aidToNavigationReport, msgTimestamp);
+        tracks.put(mmsi, aisTrack);
+        fireTrackCreated(aisTrack);
+    }
+
     private void updateAisTrack(final long mmsi, final StaticDataReport shipStaticDataReport, final Instant msgTimestamp) {
         /* Assumes lock is locked */
         AISTrack oldTrack = tracks.get(mmsi);
@@ -284,6 +294,18 @@ public class AISTracker implements TrackEventEmitter {
             throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfDynamicUpdate());
 
         AISTrack newTrack = new AISTrack(oldTrack.getStaticDataReport(), basicShipDynamicDataReport, oldTrack.getTimeOfStaticUpdate(), msgTimestamp);
+        tracks.put(mmsi, newTrack);
+        fireTrackUpdated(newTrack);
+        fireTrackDynamicsUpdated(newTrack);
+    }
+
+    private void updateAisTrack(final long mmsi, final AidToNavigationReport aidToNavigationReport, final Instant msgTimestamp) {
+        /* Assumes lock is locked */
+        AISTrack oldTrack = tracks.get(mmsi);
+        if (msgTimestamp.isBefore(oldTrack.getTimeOfLastUpdate()))
+            throw new IllegalArgumentException("Cannot update track with an older message: " + msgTimestamp + " is before previous update " + oldTrack.getTimeOfDynamicUpdate());
+
+        AISTrack newTrack = new AISTrack(aidToNavigationReport, msgTimestamp);
         tracks.put(mmsi, newTrack);
         fireTrackUpdated(newTrack);
         fireTrackDynamicsUpdated(newTrack);
