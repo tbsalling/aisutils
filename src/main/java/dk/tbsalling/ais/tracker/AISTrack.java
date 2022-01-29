@@ -250,7 +250,7 @@ public final class AISTrack {
     }
 
     public TransponderClass getTransponderClass() {
-        return dynamicDataReport != null ? dynamicDataReport.getTransponderClass() : staticDataReport.getTransponderClass();
+        return dynamicDataReport != null ? dynamicDataReport.getTransponderClass() : staticDataReport != null ? staticDataReport.getTransponderClass() : null;
     }
 
     public Instant getTimeOfLastUpdate() {
@@ -310,27 +310,27 @@ public final class AISTrack {
     }
 
     public Integer getToBow()  {
-        return staticDataReport != null ? staticDataReport.getToBow() : null;
+        return staticDataReport != null ? staticDataReport.getToBow() : aidToNavigationReport != null ? aidToNavigationReport.getToBow() : null;
     }
 
     public Integer getToStern()  {
-        return staticDataReport != null ? staticDataReport.getToStern() : null;
+        return staticDataReport != null ? staticDataReport.getToStern() : aidToNavigationReport != null ? aidToNavigationReport.getToStern() : null;
     }
 
     public Integer getToStarboard()  {
-        return staticDataReport != null ? staticDataReport.getToStarboard() : null;
+        return staticDataReport != null ? staticDataReport.getToStarboard() : aidToNavigationReport != null ? aidToNavigationReport.getToStarboard() : null;
     }
 
     public Integer getToPort()  {
-        return staticDataReport != null ? staticDataReport.getToPort() : null;
+        return staticDataReport != null ? staticDataReport.getToPort() : aidToNavigationReport != null ? aidToNavigationReport.getToPort() : null;
     }
 
     public Float getLatitude()  {
-        return dynamicDataReport != null ? dynamicDataReport.getLatitude() : null;
+        return dynamicDataReport != null ? dynamicDataReport.getLatitude() : aidToNavigationReport != null ? aidToNavigationReport.getLatitude() : null;
     }
 
     public Float getLongitude()  {
-        return dynamicDataReport != null ? dynamicDataReport.getLongitude() : null;
+        return dynamicDataReport != null ? dynamicDataReport.getLongitude() : aidToNavigationReport != null ? aidToNavigationReport.getLongitude() : null;
     }
 
     public Float getSpeedOverGround()  {
@@ -346,7 +346,8 @@ public final class AISTrack {
     }
 
     public Integer getSecond()  {
-        return dynamicDataReport instanceof ExtendedDynamicDataReport ? ((ExtendedDynamicDataReport) dynamicDataReport).getSecond() : null;
+        return dynamicDataReport instanceof ExtendedDynamicDataReport ? ((ExtendedDynamicDataReport) dynamicDataReport).getSecond() :
+                aidToNavigationReport != null ? aidToNavigationReport.getSecond() : null;
     }
 
     /* Return an immutable and sorted map of this track's dynamic history. */
