@@ -9,7 +9,7 @@ import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import dk.tbsalling.aismessages.nmea.NMEAMessageHandler;
 import dk.tbsalling.aismessages.nmea.exceptions.InvalidMessage;
 import dk.tbsalling.aismessages.nmea.messages.NMEAMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -17,8 +17,8 @@ import java.io.InputStreamReader;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ExpressionFilterTest {
 

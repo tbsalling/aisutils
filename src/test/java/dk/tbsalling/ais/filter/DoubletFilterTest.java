@@ -3,21 +3,21 @@ package dk.tbsalling.ais.filter;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.Metadata;
 import dk.tbsalling.aismessages.nmea.messages.NMEAMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
 import static java.time.Instant.now;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DoubletFilterTest {
 
     Predicate<AISMessage> filter;
 
-    @Before
+    @BeforeEach
     public void setup() {
         filter = new DoubletFilter(100, TimeUnit.MILLISECONDS);
     }

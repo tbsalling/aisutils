@@ -7,7 +7,7 @@ import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.nmea.NMEAMessageHandler;
 import dk.tbsalling.aismessages.nmea.exceptions.InvalidMessage;
 import dk.tbsalling.aismessages.nmea.messages.NMEAMessage;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -18,7 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AISTrackerEventsTest {
 

@@ -4,8 +4,8 @@ import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.nmea.NMEAMessageHandler;
 import dk.tbsalling.aismessages.nmea.exceptions.InvalidMessage;
 import dk.tbsalling.aismessages.nmea.messages.NMEAMessage;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -14,10 +14,7 @@ import java.time.Instant;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AISTrackerTest {
 
@@ -25,7 +22,7 @@ public class AISTrackerTest {
     InputStream inputStream;
     Instant wallclock = Instant.parse("2015-01-30T12:06:51.611Z");
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         tracker = new AISTracker();
         inputStream = Thread.currentThread().getContextClassLoader().getResource("ais-sample-1.nmea").openStream();
