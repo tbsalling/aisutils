@@ -19,8 +19,6 @@ package dk.tbsalling.ais.filter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
@@ -40,8 +38,6 @@ import static java.util.Objects.requireNonNull;
  * @see FilterFactory
  */
 class DoubletFilter implements Predicate<AISMessage> {
-
-    private final static Logger LOG = LoggerFactory.getLogger(DoubletFilter.class);
 
     /** Google's caching mechanism is not perfect for this - but adequate. A very few dupes may slip through. */
     private final Cache<BigInteger, Optional<AISMessage>> cache;
@@ -82,7 +78,6 @@ class DoubletFilter implements Predicate<AISMessage> {
             else
                 cache.put(digest, Optional.empty());
         } catch (NoSuchAlgorithmException e) {
-            LOG.error(e.getMessage(), e);
         }
 
         return filterPassed;

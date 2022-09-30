@@ -20,8 +20,6 @@ import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.function.Predicate;
 
@@ -68,8 +66,6 @@ import java.util.function.Predicate;
  * @see FilterFactory
  */
 class ExpressionFilter implements Predicate<AISMessage> {
-
-    private final static Logger LOG = LoggerFactory.getLogger(ExpressionFilter.class);
 
     private final Predicate<AISMessage> filter;
 

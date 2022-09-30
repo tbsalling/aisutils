@@ -23,8 +23,6 @@ import com.google.common.eventbus.EventBus;
 import dk.tbsalling.ais.tracker.events.*;
 import dk.tbsalling.aismessages.AISInputStreamReader;
 import dk.tbsalling.aismessages.ais.messages.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -58,15 +56,12 @@ import static java.util.Objects.requireNonNull;
 @ThreadSafe
 public class AISTracker implements TrackEventEmitter {
 
-    private final static Logger LOG = LoggerFactory.getLogger(AISTracker.class);
-
     private final Predicate<AISMessage> messageFilter;
 
     /**
      * Construct an AISTracker which processes all received AISMessages.
      */
     public AISTracker() {
-        LOG.info("AisTracker created.");
         messageFilter = msg -> true;
         shutdown = false;
     }
@@ -75,7 +70,6 @@ public class AISTracker implements TrackEventEmitter {
      * Construct on AISTracker which processes only messages satisfying the messageFilter.
      */
     public AISTracker(Predicate<AISMessage> messageFilter) {
-        LOG.info("AisTracker created with custom predicate.");
         this.messageFilter = messageFilter;
         shutdown = false;
     }
@@ -178,7 +172,6 @@ public class AISTracker implements TrackEventEmitter {
 
     /** Shut down the tracker */
     public void shutdown() {
-        LOG.info("AisTracker shutdown requested.");
         lock.lock();
         try {
             shutdown = true;
@@ -188,22 +181,13 @@ public class AISTracker implements TrackEventEmitter {
         try {
             taskExecutor.shutdown();
             boolean cleanShutdown = taskExecutor.awaitTermination(1, TimeUnit.MINUTES);
-            LOG.debug("taskExecutor: shutdown:" + taskExecutor.isShutdown() + " terminated:" + taskExecutor.isTerminated());
-            if (cleanShutdown == false)
-                LOG.warn("AisTracker was shut down before all pending tasks were processed");
         } catch (InterruptedException e) {
-            LOG.error("Tracker failed to shutdown cleanly", e);
         }
         try {
             eventBusExecutor.shutdown();
             boolean cleanShutdown = eventBusExecutor.awaitTermination(1, TimeUnit.MINUTES);
-            LOG.debug("eventBusExecutor: shutdown:" + eventBusExecutor.isShutdown() + " terminated:" + eventBusExecutor.isTerminated());
-            if (cleanShutdown == false)
-                LOG.warn("AisTracker was shut down before all pending events were processed");
         } catch (InterruptedException e) {
-            LOG.error("Tracker failed to shutdown cleanly", e);
         }
-        LOG.info("AisTracker shutdown completed.");
     }
 
     private <T> T threadSafeGet(Supplier<T> getter) {
@@ -461,7 +445,6 @@ public class AISTracker implements TrackEventEmitter {
     @Override
     public void registerSubscriber(Object subscriber) {
         eventBus.register(subscriber);
-        LOG.info("Subscribed to tracker events: " + subscriber);
     }
 
     private void fireTrackCreated(AISTrack track) {

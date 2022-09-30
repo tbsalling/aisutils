@@ -7,8 +7,6 @@ import dk.tbsalling.aismessages.ais.messages.AISMessage;
 import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.StaticDataReport;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +22,6 @@ import java.util.function.ToIntFunction;
  * @author Thomas Borg Salling
  */
 class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>> {
-
-    private final static Logger LOG = LoggerFactory.getLogger(FilterExpressionVisitor.class);
 
     private final AISTracker tracker = new AISTracker();
 
@@ -160,7 +156,6 @@ class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>
                 AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
                 return extractIntFromAisTrack.apply(aisTrack);
             } else {
-                LOG.warn("This is not relevant. Check program design.");
                 return 0; // Assume 0 message is not relevant / should never happen
             }
         };
@@ -176,7 +171,6 @@ class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>
                 AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
                 return extractDoubleFromAisTrack.apply(aisTrack);
             } else {
-                LOG.warn("This is not relevant for LAT/LNG. Check program design.");
                 return 0.0; // Assume sog=0.0 message is not relevant for sog / should never happen
             }
         };
