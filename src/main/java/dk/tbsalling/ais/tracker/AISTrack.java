@@ -171,9 +171,9 @@ public final class AISTrack {
     }
 
     private void validateArgs(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, AidToNavigationReport aidToNavigationReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate, Instant timeOfAtonUpdate) {
-        final long mmsiStatic = staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMMSI() : -1;
-        final long mmsiDynamic = dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() : -1;
-        final long mmsiAton = aidToNavigationReport != null ? ((AISMessage) aidToNavigationReport).getSourceMmsi().getMMSI() : -1;
+        final long mmsiStatic = staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().intValue() : -1;
+        final long mmsiDynamic = dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().intValue() : -1;
+        final long mmsiAton = aidToNavigationReport != null ? ((AISMessage) aidToNavigationReport).getSourceMmsi().intValue() : -1;
         if (mmsiStatic == -1 && mmsiDynamic == -1 && mmsiAton == -1)
             throw new IllegalArgumentException();
         if (mmsiStatic != -1 && mmsiDynamic != -1 && mmsiStatic != mmsiDynamic)
@@ -244,9 +244,9 @@ public final class AISTrack {
     }
 
     public long getMmsi() {
-        return dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMMSI() :
-                staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMMSI() :
-                ((AISMessage) aidToNavigationReport).getSourceMmsi().getMMSI();
+        return dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().intValue() :
+                staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().intValue() :
+                        ((AISMessage) aidToNavigationReport).getSourceMmsi().intValue();
     }
 
     public TransponderClass getTransponderClass() {

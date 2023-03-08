@@ -57,7 +57,7 @@ class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>
 
     @Override
     public Predicate<AISMessage> visitMmsi(AisFilterParser.MmsiContext ctx)  {
-        ToIntFunction<AISMessage> lhs = aisMessage -> aisMessage.getSourceMmsi().getMMSI().intValue();
+        ToIntFunction<AISMessage> lhs = aisMessage -> aisMessage.getSourceMmsi().intValue();
         AisFilterParser.CompareToContext compareToOperator = ctx.compareTo();
         int mmsi = Integer.valueOf(ctx.INT().getText());
         return createCompareToInt(null, lhs, compareToOperator, mmsi);
@@ -69,7 +69,7 @@ class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>
         List<TerminalNode> mmsis = ctx.intList().INT();
         mmsis.forEach(mmsi -> mmsiList.add(Integer.valueOf(mmsi.getText())));
 
-        return ctx.in() != null ? msg -> mmsiList.contains(msg.getSourceMmsi().getMMSI()) : msg -> !mmsiList.contains(msg.getSourceMmsi().getMMSI());
+        return ctx.in() != null ? msg -> mmsiList.contains(msg.getSourceMmsi().intValue()) : msg -> !mmsiList.contains(msg.getSourceMmsi().intValue());
     }
 
     @Override
@@ -153,7 +153,7 @@ class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>
                 return extractIntFromAisMessage.apply(aisMessage);
             } else if (aisMessage instanceof StaticDataReport) {
                 tracker.update(aisMessage);
-                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
+                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().intValue());
                 return extractIntFromAisTrack.apply(aisTrack);
             } else {
                 return 0; // Assume 0 message is not relevant / should never happen
@@ -168,7 +168,7 @@ class FilterExpressionVisitor extends AisFilterBaseVisitor<Predicate<AISMessage>
                 return extractDoubleFromAisMessage.apply(aisMessage);
             } else if (aisMessage instanceof StaticDataReport) {
                 tracker.update(aisMessage);
-                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().getMMSI());
+                AISTrack aisTrack = tracker.getAisTrack(aisMessage.getSourceMmsi().intValue());
                 return extractDoubleFromAisTrack.apply(aisTrack);
             } else {
                 return 0.0; // Assume sog=0.0 message is not relevant for sog / should never happen

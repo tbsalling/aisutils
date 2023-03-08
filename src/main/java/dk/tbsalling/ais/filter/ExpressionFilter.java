@@ -17,7 +17,7 @@
 package dk.tbsalling.ais.filter;
 
 import dk.tbsalling.aismessages.ais.messages.AISMessage;
-import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -75,7 +75,7 @@ class ExpressionFilter implements Predicate<AISMessage> {
 
     ExpressionFilter(String filterExpression) {
         // Create the lexer
-        AisFilterLexer lexer = new AisFilterLexer(new ANTLRInputStream(filterExpression));
+        AisFilterLexer lexer = new AisFilterLexer(CharStreams.fromString(filterExpression));
 
         // Get a list of matched tokens
         CommonTokenStream tokens = new CommonTokenStream(lexer);

@@ -200,7 +200,7 @@ public class AISTracker implements TrackEventEmitter {
     }
 
     private void updateAisTrack(final AISMessage aisMessage, final Instant messageTimestamp) {
-        final long mmsi = aisMessage.getSourceMmsi().getMMSI();
+        final long mmsi = aisMessage.getSourceMmsi().intValue();
 
         lock.lock();
         try {
