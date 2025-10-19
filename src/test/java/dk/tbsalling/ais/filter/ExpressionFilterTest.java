@@ -78,12 +78,12 @@ public class ExpressionFilterTest {
 
     @Test
     public void testMsgIdEqualsOrMmsiEquals() throws Exception {
-        verifyExpressionFilter("msgid=1 or mmsi=227006760", msg -> msg.getMessageType().getCode() == 1 || msg.getSourceMmsi().intValue() == 227006760);
+        verifyExpressionFilter("msgid=1 or mmsi=227006760", msg -> msg.getMessageType().getCode() == 1 || msg.getSourceMmsi().getMmsi() == 227006760);
     }
 
     @Test
     public void testMsgIdEqualsAndMmsiEquals() throws Exception {
-        verifyExpressionFilter("msgid=1 and mmsi=227006760", msg -> msg.getMessageType().getCode() == 1 && msg.getSourceMmsi().intValue() == 227006760);
+        verifyExpressionFilter("msgid=1 and mmsi=227006760", msg -> msg.getMessageType().getCode() == 1 && msg.getSourceMmsi().getMmsi() == 227006760);
     }
 
     //
@@ -92,12 +92,12 @@ public class ExpressionFilterTest {
 
     @Test
     public void testMmsiIdInList() throws Exception {
-        verifyExpressionFilter("mmsi in (227006760, 258009500, 257287000, 2734450)", msg -> Lists.newArrayList(227006760, 258009500, 257287000, 2734450).contains(msg.getSourceMmsi().intValue()));
+        verifyExpressionFilter("mmsi in (227006760, 258009500, 257287000, 2734450)", msg -> Lists.newArrayList(227006760, 258009500, 257287000, 2734450).contains(msg.getSourceMmsi().getMmsi()));
     }
 
     @Test
     public void testMmsiIdNotInList() throws Exception {
-        verifyExpressionFilter("mmsi not in (258009500, 257287000, 2734450)", msg -> !Lists.newArrayList(258009500, 257287000, 2734450).contains(msg.getSourceMmsi().intValue()));
+        verifyExpressionFilter("mmsi not in (258009500, 257287000, 2734450)", msg -> !Lists.newArrayList(258009500, 257287000, 2734450).contains(msg.getSourceMmsi().getMmsi()));
     }
 
     //
@@ -114,7 +114,7 @@ public class ExpressionFilterTest {
                 return ((DynamicDataReport) msg).getSpeedOverGround() > 5.9;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float sog = track.getSpeedOverGround();
                 if (sog == null)
                     sog = 0.0f;
@@ -134,7 +134,7 @@ public class ExpressionFilterTest {
                 return ((DynamicDataReport) msg).getSpeedOverGround() > 5.9;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float sog = track.getSpeedOverGround();
                 if (sog == null)
                     sog = 0.0f;
@@ -154,7 +154,7 @@ public class ExpressionFilterTest {
                 return ((DynamicDataReport) msg).getSpeedOverGround() >= 6.0;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float sog = track.getSpeedOverGround();
                 if (sog == null)
                     sog = 0.0f;
@@ -174,7 +174,7 @@ public class ExpressionFilterTest {
                 return Math.abs(((DynamicDataReport) msg).getSpeedOverGround() - 10.1f) < 1e-6;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float sog = track.getSpeedOverGround();
                 if (sog == null)
                     sog = 0.0f;
@@ -198,7 +198,7 @@ public class ExpressionFilterTest {
                 return ((DynamicDataReport) msg).getCourseOverGround() > 270.0;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float cog = track.getCourseOverGround();
                 if (cog == null)
                     cog = 0.0f;
@@ -218,7 +218,7 @@ public class ExpressionFilterTest {
                 return ((DynamicDataReport) msg).getCourseOverGround() > 330 || ((DynamicDataReport) msg).getCourseOverGround() < 30;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float cog = track.getCourseOverGround();
                 if (cog == null)
                     cog = 0.0f;
@@ -242,7 +242,7 @@ public class ExpressionFilterTest {
                 return ((DynamicDataReport) msg).getLatitude() > 55.0 && ((DynamicDataReport) msg).getLatitude() < 55.5;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float lat = track.getLatitude();
                 if (lat == null)
                     lat = 0.0f;
@@ -262,7 +262,7 @@ public class ExpressionFilterTest {
                 return ((DynamicDataReport) msg).getLongitude() > 10.0 && ((DynamicDataReport) msg).getLongitude() < 11.0;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float lng = track.getLongitude();
                 if (lng == null)
                     lng = 0.0f;
@@ -285,7 +285,7 @@ public class ExpressionFilterTest {
                         ((DynamicDataReport) msg).getLongitude() < 6.0;
             } else if (msg instanceof StaticDataReport) {
                 tracker.update(msg);
-                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().intValue());
+                AISTrack track = tracker.getAisTrack(msg.getSourceMmsi().getMmsi());
                 Float lat = track.getLatitude();
                 Float lng = track.getLongitude();
                 if (lat == null)
@@ -343,7 +343,7 @@ public class ExpressionFilterTest {
         String line;
         while((line = input.readLine()) != null) {
             try {
-                nmeaMessageHandler.accept(NMEAMessage.fromString(line));
+                nmeaMessageHandler.accept(new NMEAMessage(line));
             } catch(InvalidMessage e) {
                 System.out.println(e.getMessage());
             }

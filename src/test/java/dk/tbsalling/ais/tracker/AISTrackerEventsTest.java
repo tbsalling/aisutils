@@ -115,7 +115,7 @@ public class AISTrackerEventsTest {
         String line;
         while((line = input.readLine()) != null) {
             try {
-                nmeaMessageHandler.accept(NMEAMessage.fromString(line));
+                nmeaMessageHandler.accept(new NMEAMessage(line));
                 numLines++;
             } catch(InvalidMessage e) {
                 System.out.println(e.getMessage());

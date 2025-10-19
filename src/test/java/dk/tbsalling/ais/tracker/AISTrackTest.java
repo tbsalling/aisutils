@@ -8,12 +8,15 @@ import dk.tbsalling.aismessages.ais.messages.DynamicDataReport;
 import dk.tbsalling.aismessages.ais.messages.PositionReport;
 import dk.tbsalling.aismessages.ais.messages.ShipAndVoyageData;
 import dk.tbsalling.aismessages.ais.messages.types.ShipType;
+import dk.tbsalling.aismessages.nmea.NMEAMessageHandler;
 import dk.tbsalling.aismessages.nmea.messages.NMEAMessage;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,12 +31,21 @@ public class AISTrackTest {
     AISTrack track;
     Instant now;
 
+    private static AISMessage parseNMEA(NMEAMessage... nmeaMessages) {
+        List<AISMessage> aisMessages = new ArrayList<>();
+        NMEAMessageHandler handler = new NMEAMessageHandler("TESTSRC", aisMessages::add);
+        for (NMEAMessage msg : nmeaMessages) {
+            handler.accept(msg);
+        }
+        return aisMessages.isEmpty() ? null : aisMessages.get(0);
+    }
+
     @BeforeAll
     public static void setup() {
-        staticAisMessageMMSI211339980 = (ShipAndVoyageData) AISMessage.create(NMEAMessage.fromString("!AIVDM,2,1,0,B,539S:k40000000c3G04PPh63<00000000080000o1PVG2uGD:00000000000,0*34"), NMEAMessage.fromString("!AIVDM,2,2,0,B,00000000000,2*27"));
-        dynamicAisMessageMMSI576048000 = (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,18UG;P0012G?Uq4EdHa=c;7@051@,0*53"));
-        staticAisMessageMMSI367524080 = (ShipAndVoyageData) AISMessage.create(NMEAMessage.fromString("!AIVDM,2,1,6,B,55NOpt400001L@O?;G0HuE9@R15D59@E:222220O0p>4440Ht6hhjH4QDiDU,0*46"), NMEAMessage.fromString("!AIVDM,2,2,6,B,QH888888880,2*38"));
-        dynamicAisMessageMMSI367524080 = (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,15NOpt0P00qQJLvA<K4HmwwL2<4T,0*11"));
+        staticAisMessageMMSI211339980 = (ShipAndVoyageData) parseNMEA(new NMEAMessage("!AIVDM,2,1,0,B,539S:k40000000c3G04PPh63<00000000080000o1PVG2uGD:00000000000,0*34"), new NMEAMessage("!AIVDM,2,2,0,B,00000000000,2*27"));
+        dynamicAisMessageMMSI576048000 = (PositionReport) parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,18UG;P0012G?Uq4EdHa=c;7@051@,0*53"));
+        staticAisMessageMMSI367524080 = (ShipAndVoyageData) parseNMEA(new NMEAMessage("!AIVDM,2,1,6,B,55NOpt400001L@O?;G0HuE9@R15D59@E:222220O0p>4440Ht6hhjH4QDiDU,0*46"), new NMEAMessage("!AIVDM,2,2,6,B,QH888888880,2*38"));
+        dynamicAisMessageMMSI367524080 = (PositionReport) parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,15NOpt0P00qQJLvA<K4HmwwL2<4T,0*11"));
     }
 
     @BeforeEach
@@ -177,33 +189,33 @@ public class AISTrackTest {
     public void testDynamicHistory() {
 
         now = Instant.parse("2015-01-30T17:00:00.000Z");
-        AISTrack track = new AISTrack((ShipAndVoyageData) AISMessage.create(NMEAMessage.fromString("!AIVDM,2,1,7,A,53AkSB02=:9TuaaR2210uDj0htELDptE8r22221J40=5562kN81TQA1DRBlj,0*1D"), NMEAMessage.fromString("!AIVDM,2,2,7,A,0ES`8888880,2*65")), now);
+        AISTrack track = new AISTrack((ShipAndVoyageData) parseNMEA(new NMEAMessage("!AIVDM,2,1,7,A,53AkSB02=:9TuaaR2210uDj0htELDptE8r22221J40=5562kN81TQA1DRBlj,0*1D"), new NMEAMessage("!AIVDM,2,2,7,A,0ES`8888880,2*65")), now);
 
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(0, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B")), now);
+        track = new AISTrack(track, (PositionReport) parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(0, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B")), now);
+        track = new AISTrack(track, (PositionReport) parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(1, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00")), now);
+        track = new AISTrack(track, (PositionReport) parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(2, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E")), now);
+        track = new AISTrack(track, (PositionReport) parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(3, track.getDynamicDataHistory().size());
 
         now = now.plusSeconds(10);
-        track = new AISTrack(track, (PositionReport) AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59")), now);
+        track = new AISTrack(track, (PositionReport) parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59")), now);
         assertNotNull(track.getDynamicDataHistory());
         assertEquals(4, track.getDynamicDataHistory().size());
 
@@ -217,24 +229,24 @@ public class AISTrackTest {
         Instant instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:10.000Z"), instant);
         DynamicDataReport historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B")), historicDynamicDataReport);
+        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B")), historicDynamicDataReport);
 
         instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:20.000Z"), instant);
         historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B")), historicDynamicDataReport);
+        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B")), historicDynamicDataReport);
 
         instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:30.000Z"), instant);
         historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00")), historicDynamicDataReport);
+        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00")), historicDynamicDataReport);
 
         instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:40.000Z"), instant);
         historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E")), historicDynamicDataReport);
+        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E")), historicDynamicDataReport);
 
-        assertEquals(AISMessage.create(NMEAMessage.fromString("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59")), track.getDynamicDataReport());
+        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59")), track.getDynamicDataReport());
     }
 
 }

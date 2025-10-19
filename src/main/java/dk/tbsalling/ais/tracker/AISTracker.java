@@ -99,7 +99,7 @@ public class AISTracker implements TrackEventEmitter {
         requireNonNull(aisMessage);
 
         Metadata metadata = aisMessage.getMetadata();
-        Instant messageTimestamp = metadata == null ? now(Clock.systemUTC()) : metadata.getReceived();
+        Instant messageTimestamp = metadata == null ? now(Clock.systemUTC()) : metadata.received();
 
         if (messageFilter.test(aisMessage))
             updateAisTrack(aisMessage, messageTimestamp);
@@ -200,7 +200,7 @@ public class AISTracker implements TrackEventEmitter {
     }
 
     private void updateAisTrack(final AISMessage aisMessage, final Instant messageTimestamp) {
-        final long mmsi = aisMessage.getSourceMmsi().intValue();
+        final long mmsi = aisMessage.getSourceMmsi().getMmsi();
 
         lock.lock();
         try {
