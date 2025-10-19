@@ -229,24 +229,29 @@ public class AISTrackTest {
         Instant instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:10.000Z"), instant);
         DynamicDataReport historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B")), historicDynamicDataReport);
+        AISMessage expected = parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,33AkSB5000PhAltPoTK;@1GL0000,0*1B"));
+        assertEquals(expected.getMetadata().nmeaMessages()[0].getRawMessage(), ((AISMessage)historicDynamicDataReport).getMetadata().nmeaMessages()[0].getRawMessage());
 
         instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:20.000Z"), instant);
         historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B")), historicDynamicDataReport);
+        expected = parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNeoQF@0H6>,0*4B"));
+        assertEquals(expected.getMetadata().nmeaMessages()[0].getRawMessage(), ((AISMessage)historicDynamicDataReport).getMetadata().nmeaMessages()[0].getRawMessage());
 
         instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:30.000Z"), instant);
         historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00")), historicDynamicDataReport);
+        expected = parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,13AkSB0000PhAmHPoTNcp1Fp0D17,0*00"));
+        assertEquals(expected.getMetadata().nmeaMessages()[0].getRawMessage(), ((AISMessage)historicDynamicDataReport).getMetadata().nmeaMessages()[0].getRawMessage());
 
         instant = iterator.next();
         assertEquals(Instant.parse("2015-01-30T17:00:40.000Z"), instant);
         historicDynamicDataReport = dynamicDataHistory.get(instant);
-        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E")), historicDynamicDataReport);
+        expected = parseNMEA(new NMEAMessage("!AIVDM,1,1,,B,13AkSB0000PhAmJPoTMoiQFT0D1:,0*5E"));
+        assertEquals(expected.getMetadata().nmeaMessages()[0].getRawMessage(), ((AISMessage)historicDynamicDataReport).getMetadata().nmeaMessages()[0].getRawMessage());
 
-        assertEquals(parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59")), track.getDynamicDataReport());
+        expected = parseNMEA(new NMEAMessage("!AIVDM,1,1,,A,33AkSB0000PhAm@PoTNaR1Fp0001,0*59"));
+        assertEquals(expected.getMetadata().nmeaMessages()[0].getRawMessage(), ((AISMessage)track.getDynamicDataReport()).getMetadata().nmeaMessages()[0].getRawMessage());
     }
 
 }

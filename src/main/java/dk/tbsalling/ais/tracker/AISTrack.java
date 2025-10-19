@@ -326,11 +326,23 @@ public final class AISTrack {
     }
 
     public Float getLatitude()  {
-        return dynamicDataReport != null ? dynamicDataReport.getLatitude() : aidToNavigationReport != null ? aidToNavigationReport.getLatitude() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getLatitude();
+        } else if (aidToNavigationReport != null) {
+            return aidToNavigationReport.getLatitude();
+        } else {
+            return null;
+        }
     }
 
     public Float getLongitude()  {
-        return dynamicDataReport != null ? dynamicDataReport.getLongitude() : aidToNavigationReport != null ? aidToNavigationReport.getLongitude() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getLongitude();
+        } else if (aidToNavigationReport != null) {
+            return aidToNavigationReport.getLongitude();
+        } else {
+            return null;
+        }
     }
 
     public Float getSpeedOverGround()  {
