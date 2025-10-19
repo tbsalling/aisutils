@@ -346,11 +346,19 @@ public final class AISTrack {
     }
 
     public Float getSpeedOverGround()  {
-        return dynamicDataReport != null ? dynamicDataReport.getSpeedOverGround() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getSpeedOverGround();
+        } else {
+            return null;
+        }
     }
 
     public Float getCourseOverGround()  {
-        return dynamicDataReport != null ? dynamicDataReport.getCourseOverGround() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getCourseOverGround();
+        } else {
+            return null;
+        }
     }
 
     public Integer getTrueHeading()  {
