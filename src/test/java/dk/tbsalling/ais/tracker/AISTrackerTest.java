@@ -94,7 +94,7 @@ public class AISTrackerTest {
         String line;
         while((line = input.readLine()) != null) {
             try {
-                nmeaMessageHandler.accept(NMEAMessage.fromString(line));
+                nmeaMessageHandler.accept(new NMEAMessage(line));
             } catch(InvalidMessage e) {
                 System.out.println(e.getMessage());
             }

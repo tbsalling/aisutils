@@ -1,6 +1,6 @@
 module dk.tbsalling.ais.utils {
     requires com.google.common;
-    requires dk.tbsalling.ais.messages;
+    requires aismessages;
     requires jsr305;
     requires org.antlr.antlr4.runtime;
 

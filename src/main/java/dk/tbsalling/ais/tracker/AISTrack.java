@@ -171,9 +171,9 @@ public final class AISTrack {
     }
 
     private void validateArgs(StaticDataReport staticDataReport, DynamicDataReport dynamicDataReport, AidToNavigationReport aidToNavigationReport, Instant timeOfStaticUpdate, Instant timeOfDynamicUpdate, Instant timeOfAtonUpdate) {
-        final long mmsiStatic = staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().intValue() : -1;
-        final long mmsiDynamic = dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().intValue() : -1;
-        final long mmsiAton = aidToNavigationReport != null ? ((AISMessage) aidToNavigationReport).getSourceMmsi().intValue() : -1;
+        final long mmsiStatic = staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMmsi() : -1;
+        final long mmsiDynamic = dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMmsi() : -1;
+        final long mmsiAton = aidToNavigationReport != null ? ((AISMessage) aidToNavigationReport).getSourceMmsi().getMmsi() : -1;
         if (mmsiStatic == -1 && mmsiDynamic == -1 && mmsiAton == -1)
             throw new IllegalArgumentException();
         if (mmsiStatic != -1 && mmsiDynamic != -1 && mmsiStatic != mmsiDynamic)
@@ -244,9 +244,9 @@ public final class AISTrack {
     }
 
     public long getMmsi() {
-        return dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().intValue() :
-                staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().intValue() :
-                        ((AISMessage) aidToNavigationReport).getSourceMmsi().intValue();
+        return dynamicDataReport != null ? ((AISMessage) dynamicDataReport).getSourceMmsi().getMmsi() :
+                staticDataReport != null ? ((AISMessage) staticDataReport).getSourceMmsi().getMmsi() :
+                        ((AISMessage) aidToNavigationReport).getSourceMmsi().getMmsi();
     }
 
     public TransponderClass getTransponderClass() {
@@ -326,19 +326,39 @@ public final class AISTrack {
     }
 
     public Float getLatitude()  {
-        return dynamicDataReport != null ? dynamicDataReport.getLatitude() : aidToNavigationReport != null ? aidToNavigationReport.getLatitude() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getLatitude();
+        } else if (aidToNavigationReport != null) {
+            return aidToNavigationReport.getLatitude();
+        } else {
+            return null;
+        }
     }
 
     public Float getLongitude()  {
-        return dynamicDataReport != null ? dynamicDataReport.getLongitude() : aidToNavigationReport != null ? aidToNavigationReport.getLongitude() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getLongitude();
+        } else if (aidToNavigationReport != null) {
+            return aidToNavigationReport.getLongitude();
+        } else {
+            return null;
+        }
     }
 
     public Float getSpeedOverGround()  {
-        return dynamicDataReport != null ? dynamicDataReport.getSpeedOverGround() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getSpeedOverGround();
+        } else {
+            return null;
+        }
     }
 
     public Float getCourseOverGround()  {
-        return dynamicDataReport != null ? dynamicDataReport.getCourseOverGround() : null;
+        if (dynamicDataReport != null) {
+            return dynamicDataReport.getCourseOverGround();
+        } else {
+            return null;
+        }
     }
 
     public Integer getTrueHeading()  {
