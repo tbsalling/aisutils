@@ -204,6 +204,65 @@ Duplicate filters are also instantiated through the FilterFactory class, like th
 Predicate<AISMessage> doubletFilter = FilterFactory.newDoubletFilter(15, TimeUnit.SECONDS);
 ```
 
+## KML Export
+
+The KML exporter allows you to export AIS vessel tracks to KML (Keyhole Markup Language) format for visualization in Google Earth and other KML-compatible applications.
+
+### Export vessel positions to KML
+
+The KMLExporter class provides static methods to export one or more vessel tracks to KML format:
+
+```java
+import dk.tbsalling.ais.exporter.KMLExporter;
+import dk.tbsalling.ais.tracker.AISTrack;
+import dk.tbsalling.ais.tracker.AISTracker;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.util.Set;
+
+public class MyApp {
+
+    public static void main(String [] args) throws IOException {
+        // Create and update tracker
+        AISTracker tracker = new AISTracker();
+        InputStream aisInputStream = ...;
+        tracker.update(aisInputStream);
+        
+        // Get all tracked vessels
+        Set<AISTrack> tracks = tracker.getAisTracks();
+        
+        // Export to KML file
+        try (FileWriter writer = new FileWriter("vessels.kml")) {
+            KMLExporter.exportToKML(tracks, writer);
+        }
+        
+        // You can now open vessels.kml in Google Earth!
+    }
+}
+```
+
+The exported KML file includes detailed information for each vessel:
+- Vessel name (or MMSI if name is unavailable)
+- Position (latitude/longitude)
+- MMSI, callsign, ship type
+- Speed over ground and course over ground
+- Heading
+- Vessel dimensions (length and beam)
+- Last update timestamp
+
+Each vessel is represented as a KML Placemark with a Point geometry at its current position.
+
+### Export a single vessel
+
+You can also export a single vessel track:
+
+```java
+AISTrack track = tracker.getAisTrack(219997000);  // Get specific track by MMSI
+try (FileWriter writer = new FileWriter("vessel.kml")) {
+    KMLExporter.exportSingleTrackToKML(track, writer);
+}
+```
+
 ## How to get, build and include AISutils in your project
 You do not need to compile AISutils yourself. It is available in [Maven Central](https://mvnrepository.com/artifact/dk.tbsalling/aisutils). So if you are using Maven, 
 all you need to do is add these lines to your pom.xml:
@@ -240,4 +299,4 @@ Roadmap
 More advanced free-text filter expressions for AIS messages
 event triggering
 message archiving in Big Data stores
-export of KML-files for Google Earth
+~~export of KML-files for Google Earth~~ (implemented)

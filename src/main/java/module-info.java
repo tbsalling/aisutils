@@ -7,6 +7,7 @@ module dk.tbsalling.ais.utils {
     exports dk.tbsalling.ais.filter;
     exports dk.tbsalling.ais.tracker.events;
     exports dk.tbsalling.ais.tracker;
+    exports dk.tbsalling.ais.exporter;
 
     opens dk.tbsalling.ais.tracker to com.google.common;
 }
