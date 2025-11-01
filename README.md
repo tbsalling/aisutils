@@ -217,6 +217,7 @@ import dk.tbsalling.ais.exporter.KMLExporter;
 import dk.tbsalling.ais.tracker.AISTrack;
 import dk.tbsalling.ais.tracker.AISTracker;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
