@@ -30,7 +30,26 @@ AISutils is a Java library for processing AIS (Automatic Identification System) 
   - ANTLR4 (4.12.0) - Expression parser for filter grammar
 - **Testing**: JUnit Jupiter 5.9.2
 
+## Java 21 Features
+
+Use modern Java 21 features wherever they make sense and improve code quality:
+
+- **Pattern Matching**: Use pattern matching for `instanceof` and `switch` expressions
+- **Records**: Consider using records for simple data carriers
+- **Text Blocks**: Use text blocks for multi-line strings (e.g., SQL, JSON, test data)
+- **Switch Expressions**: Prefer switch expressions over traditional switch statements
+- **Sealed Classes**: Use sealed classes for closed type hierarchies where appropriate
+- **Virtual Threads**: Consider virtual threads for concurrent operations (be mindful of existing thread management)
+- **Sequenced Collections**: Use new sequenced collection methods when working with ordered collections
+
 ## Code Style and Conventions
+
+### Clean Code Principles
+- Write **clean, efficient, and maintainable** code
+- Use **latest best practices and design patterns**
+- Keep code **simple and readable** - favor clarity over cleverness
+- Follow the **SOLID principles** where applicable
+- Prefer **composition over inheritance**
 
 ### Naming Conventions
 - Use `AISTracker` and `AISTrack` (not `AisTracker`/`AisTrack`) for main classes
@@ -41,7 +60,16 @@ AISutils is a Java library for processing AIS (Automatic Identification System) 
 - **Builder Pattern**: Not heavily used; prefer constructor-based initialization
 - **Factory Pattern**: `FilterFactory` for creating filter instances
 - **Observer Pattern**: EventBus for track lifecycle notifications
-- **Immutability**: Prefer immutable collections (use Guava's `ImmutableSet`)
+- **Immutability**: Prefer immutable objects and collections (use Guava's `ImmutableSet`, `ImmutableMap`, etc.)
+
+### Method Design
+- **Single-Return**: Prefer methods with a single return statement at the end
+- **Short Methods**: Keep methods short and focused on doing one thing well
+- **Method Responsibility**: Each method should have a clear, single responsibility
+
+### Keyword Usage
+- **`final` Keyword**: Use the `final` keyword sparsely - only where it provides meaningful value
+- Avoid excessive use of `final` for local variables and parameters
 
 ### Thread Safety
 - Mark thread-safe classes with `@ThreadSafe` annotation
@@ -106,8 +134,32 @@ mvn install
 
 ### Unit Tests
 - Located in `src/test/java/`
-- Use JUnit assertions and annotations
-- Mock or use test data files in `src/test/resources/`
+- Use **JUnit 5** (Jupiter) for all tests
+- Use **Mockito** for mocking dependencies
+- Use test data files in `src/test/resources/` where appropriate
+
+### Test Structure and Naming
+- Follow the **Arrange-Act-Assert** pattern for all tests
+- Name the system under test variable as **`sut`**
+- Add **line comments** to clearly mark the three sections:
+  ```java
+  @Test
+  void testMethodName() {
+      // Arrange
+      SomeClass sut = new SomeClass();
+      
+      // Act
+      ResultType result = sut.methodUnderTest();
+      
+      // Assert
+      assertEquals(expectedValue, result);
+  }
+  ```
+
+### Test Coverage
+- Ensure **good test coverage** for all new code
+- Test happy paths, edge cases, and error conditions
+- Test boundary conditions and invalid inputs
 
 ### Test Data
 - Sample NMEA messages in test resources
