@@ -272,7 +272,7 @@ all you need to do is add these lines to your pom.xml:
 <dependency>
     <groupId>dk.tbsalling</groupId>
     <artifactId>aisutils</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 
@@ -291,7 +291,7 @@ Then add this to the pom.xml file of your own Java Maven project:
 <dependency>
     <groupId>dk.tbsalling</groupId>
     <artifactId>aisutils</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.1.6-SNAPSHOT</version>
 </dependency>
 ```
 

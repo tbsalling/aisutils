@@ -4,7 +4,7 @@
     <groupId>dk.tbsalling</groupId>
     <artifactId>aisutils</artifactId>
     <packaging>jar</packaging>
-    <version>1.1.5-SNAPSHOT</version>
+    <version>1.1.5</version>
 
     <name>aisutils</name>
     <description>Utilities for processing AIS messages; e.g. tracking, free-text filter expressions, archiving, and more.</description>
@@ -181,7 +181,7 @@
         <dependency>
             <groupId>dk.tbsalling</groupId>
             <artifactId>aismessages</artifactId>
-            <version>4.1.0</version>
+            <version>4.1.2</version>
         </dependency>
 
         <dependency>
