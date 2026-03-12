@@ -42,3 +42,7 @@ Thumbs.db
 ######################
 target/
 *.txt
+
+# Generated KML files #
+#######################
+*.kml
