@@ -22,17 +22,17 @@ AISutils is a Java library for processing AIS (Automatic Identification System) 
 
 ## Technology Stack
 
-- **Language**: Java 21
+- **Language**: Java 25
 - **Build Tool**: Maven
 - **Key Dependencies**:
-  - `aismessages` (3.3.1) - AIS message parsing
+  - `aismessages` (5.0.0) - AIS message parsing
   - Google Guava (31.1-jre) - Event bus and collections
   - ANTLR4 (4.12.0) - Expression parser for filter grammar
 - **Testing**: JUnit Jupiter 5.9.2
 
-## Java 21 Features
+## Java 25 Features
 
-Use modern Java 21 features wherever they make sense and improve code quality:
+Use modern Java 25 features wherever they make sense and improve code quality:
 
 - **Pattern Matching**: Use pattern matching for `instanceof` and `switch` expressions
 - **Records**: Consider using records for simple data carriers
@@ -187,7 +187,7 @@ mvn install
 ## Important Notes
 
 1. **No commercial use** without proper licensing
-2. Maintain compatibility with Java 21+
+2. Maintain compatibility with Java 25+
 3. Prefer new Java language features over old ones
 4. Keep dependencies up to date but test thoroughly
 5. Follow existing code patterns and style

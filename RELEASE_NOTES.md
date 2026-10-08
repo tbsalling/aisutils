@@ -6,8 +6,8 @@
 - **KML Export**: New `KMLExporter` class allows exporting tracked vessel positions to KML format for visualization in Google Earth and other compatible applications. Supports exporting all tracks or a single track.
 
 ### Improvements
-- **Java 21**: Updated minimum Java version requirement to Java 21, enabling use of modern language features.
-- **Updated dependencies**: Upgraded `aismessages` to 4.1.2 and Guava to 32.0.0-jre.
+- **Java 25**: Updated minimum Java version requirement to Java 25, enabling use of modern language features.
+- **Updated dependencies**: Upgraded `aismessages` to 5.0.0 and Guava to 32.0.0-jre.
 - **Comprehensive test coverage**: Added unit tests using the Arrange-Act-Assert pattern with Mockito for mocked dependencies.
 
 ### Bug Fixes
